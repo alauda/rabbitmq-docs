@@ -1,0 +1,24 @@
+---
+weight: 20
+sourceSHA: bf6a6606bc7fa7872709f04f08619d72537a26c20352e8ff3bf8021dc9b1da3a
+---
+
+# Architecture
+
+The architecture of RabbitMQ is based on the message queue pattern and consists of several components, including Producers, Message Queues, Consumers, and Broker.
+
+There are several roles in RabbitMQ:
+
+- **Producers**: Producers are responsible for creating and sending messages to RabbitMQ's message queues. They publish messages to an Exchange and specify the Routing Key of the message.
+- **Exchange**: An Exchange receives messages from Producers and routes them to one or more Message Queues based on the message's Routing Key. Exchanges come in different types, such as direct exchange, topic exchange, and fanout exchange, and they determine the routing method of the message based on the matching rules of the Routing Key.
+- **Message Queues**: Message Queues are the core component of RabbitMQ, storing messages that are waiting to be processed. Message Queues manage messages in a First-In-First-Out (FIFO) manner, ensuring the order of messages. Consumers retrieve messages from the Message Queue for processing.
+- **Consumers**: Consumers obtain messages from the Message Queue and perform the necessary processing. They can subscribe to one or more Message Queues and specify the acknowledgment mechanism for messages as needed, ensuring that messages are acknowledged after being consumed.
+- **Broker**: The Broker is the core component of RabbitMQ; it receives messages from Producers and routes them to the appropriate Message Queues. The Broker is also responsible for managing message delivery, acknowledgment, and persistent storage.
+
+The architecture of RabbitMQ supports various messaging patterns, such as point-to-point, publish/subscribe, and request/reply. It also provides flexible routing rules, persistent storage, reliable message delivery, and message prioritization features to meet the needs of different scenarios.
+
+The following diagram illustrates the process of publishing and consuming messages via the **Exchange**.
+
+![Message Sending and Receiving Model](./assets/rabbitmq-arch-1.png)
+
+For concepts and principles of each component, please refer to [Core Concepts](./concepts).

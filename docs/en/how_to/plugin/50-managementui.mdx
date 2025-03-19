@@ -1,0 +1,91 @@
+---
+weight: 50
+sourceSHA: 3c5eee1f54df146ba0576559c25aba5438c03f265320b3ad893de238901bc80f
+---
+
+# Using the Management UI
+
+This article covers the basic operations within the Management UI (Management Interface). For more content, please refer to the [RabbitMQ Official Documentation](https://www.rabbitmq.com/docs/management).
+
+## Obtaining the Management UI Access Address
+
+### Instance Without External Cluster Access
+
+If the instance does not have the external cluster access feature enabled, a load balancer must be configured to set up a reverse proxy.
+
+<Tabs>
+  <Tab label="Web Console">
+    1. In the **Client** area, click **Add management port**.
+
+    2. Configure the related parameters according to the instructions below.
+
+       | Parameter        | Description                                                       |
+       | --------- | ------------------------------------------------------- |
+       | **Load Balancer** | Producers and consumers outside the cluster will access the instance through the address of this load balancer.                            |
+       | **Port**    | The load balancer listens for access traffic on this port and receives TCP access requests from producers and consumers.                |
+       | **Internal Routing Group** | Access traffic will be forwarded to the instance by default through this internal router.                                    |
+       | **Session Persistence**  | If session persistence is based on **source address hashing**, access requests from the same IP address will always be forwarded to the corresponding backend service of the internal router. |
+
+    3. Click **Add**.
+
+    4. Click the link provided in the **Port** column to log into the Management UI in a new browser tab.
+  </Tab>
+</Tabs>
+
+### Instance with External Cluster Access Enabled
+
+<Tabs>
+  <Tab label="Web Console">
+    1. In the left navigation bar, click **RabbitMQ**.
+
+    2. Click on ***Instance Name***.
+
+    3. In the **Access Method** tab, click on ***Management Portal Address***.
+  </Tab>
+</Tabs>
+
+After logging into the Management UI, the page appears as shown in the figure below:
+
+![Management UI](../../assets/rabbitmq-console-1.png)
+
+## Using the Management UI
+
+1. Refer to [User Management](../../functions/20-user) to obtain login information.
+
+2. Create an Exchange.
+
+   1. In the **Exchanges** tab, expand **Add a new exchange**.
+
+   2. Fill in the relevant information and click **Add exchange**.
+
+3. Create a Queue.
+
+   1. In the **Queues** tab, expand **Add a new queue**.
+
+   2. Fill in the relevant information and click **Add queue**.
+
+      > **Tip**: Configuring reasonable message timeout parameters (e.g., `x-message-ttl=3600000`) can avoid message backlog. Excessive message backlog may cause persistent volume claims to be impacted due to leftover unconsumed old messages, resulting in insufficient space to accommodate new messages.
+
+4. Bind the Queue to the Exchange.
+
+   1. In the **Exchanges** tab, click on the name of the exchange.
+
+   2. Expand **Bindings**, fill in the name of the target queue, and set the **Routing key**.
+
+   3. Click **Bind**.
+
+5. Send Messages.
+
+   1. In the **Exchanges** tab, click on the name of the exchange.
+
+   2. Expand **Publish message**, enter the **Routing key** set in the exchange, and fill in the message content in **Payload**.
+
+   3. Click **Publish message**.
+
+6. Receive Messages.
+
+   1. In the **Queues** tab, click on the name of the queue.
+
+   2. Expand **Get messages** and click **Get Message(s)**.
+
+   3. View the message content.

@@ -1,0 +1,253 @@
+---
+weight: 60
+i18n:
+  title:
+    en: Plugin
+sourceSHA: a942f6a9aa660222d734f4bcb22469a03d31936f619d29efa131ae503b4dd85e
+title: Plugin
+---
+
+# Plugin Support
+
+## Plugin Mechanism
+
+RabbitMQ supports plugins, which extend functionality in various ways: supporting more protocols, system status monitoring, additional AMQP 0-9-1 exchange types, node federation, etc. Many features are implemented as plugins and are provided along with core releases.
+
+For more information, please refer to: [https://www.rabbitmq.com/docs/plugins#overview](https://www.rabbitmq.com/docs/plugins#overview)
+
+## Operation Instructions
+
+### View Supported Plugins in the Instance
+
+Select any node of the RabbitMQ instance, enter the Pod, and execute the following command to view the supported and enabled status of the plugins:
+
+```
+rabbitmq-plugins list
+```
+
+By default, the plugins `rabbitmq_peer_discovery_k8s`, `rabbitmq_prometheus`, `rabbitmq_management`, and their related plugins are enabled upon instance creation.
+
+Below is the list of plugins included in the image along with their descriptions:
+
+| Plugin Name                               | Description                                                                                                       |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **rabbitmq\_amqp1\_0**                    | A plugin for supporting the AMQP 1.0 protocol that allows AMQP 1.0 clients to connect to RabbitMQ                 |
+| **rabbitmq\_auth\_backend\_cache**        | A plugin for caching authentication results, it can improve RabbitMQ's authentication performance and reduce requests to backend authentication services |
+| **rabbitmq\_auth\_backend\_http**         | A plugin for supporting HTTP authentication, it allows RabbitMQ users to be verified via an HTTP service          |
+| **rabbitmq\_auth\_backend\_ldap**         | A plugin for supporting LDAP authentication, it allows RabbitMQ users to be verified via an LDAP service          |
+| **rabbitmq\_auth\_backend\_oauth2**       | A plugin for supporting OAuth 2.0 authentication, it allows RabbitMQ users to be verified via an OAuth 2.0 service |
+| **rabbitmq\_auth\_mechanism\_ssl**        | A plugin for supporting SSL authentication, it allows RabbitMQ users to be verified using SSL certificates        |
+| **rabbitmq\_consistent\_hash\_exchange**  | A plugin for implementing consistent hashing, it allows you to create a special exchange that computes hash values based on message routing keys or headers, then sends the messages to the corresponding queues |
+| **rabbitmq\_delayed\_message\_exchange**  | A plugin for delayed messaging, it allows you to create a special exchange that sets a delay based on message headers, temporarily storing messages in memory or on disk until the delay expires, and then sends the messages to the corresponding queues |
+| **rabbitmq\_event\_exchange**             | A plugin for publishing RabbitMQ events, it allows you to create a special exchange that sends various RabbitMQ events, such as creation, deletion, and modification of connections, channels, queues, users, permissions, etc., to corresponding queues, supporting multiple event types and filtering options |
+| **rabbitmq\_federation**                  | A plugin for connecting multiple RabbitMQ instances, it allows you to create federations that forward messages from one RabbitMQ instance to another |
+| **rabbitmq\_federation\_management**      | A plugin for managing RabbitMQ federation that enables you to view and configure RabbitMQ federations via a web interface |
+| **rabbitmq\_jms\_topic\_exchange**        | A plugin for supporting JMS topics, it allows you to create a special exchange that routes messages based on the JMSDestination header of the messages |
+| **rabbitmq\_management**                   | A plugin for managing and monitoring RabbitMQ, it provides a web interface that allows you to view the status, configuration, statistics, and logs of RabbitMQ, as well as perform some operations |
+| **rabbitmq\_management\_agent**            | A plugin for supporting RabbitMQ management, it provides an agent that reports various information, such as the usage of memory, disk, connections, channels, queues, etc., from RabbitMQ nodes to the management plugin, and allows the management plugin to send various commands to RabbitMQ nodes |
+| **rabbitmq\_mqtt**                         | A plugin for supporting the MQTT protocol, it allows MQTT clients to connect to RabbitMQ, supporting various features such as QoS, retained messages, last will messages, topic filtering, etc. |
+| **rabbitmq\_peer\_discovery\_aws**        | A plugin for supporting AWS node discovery, it can automatically discover and join RabbitMQ clusters in AWS environments, supporting various AWS services |
+| **rabbitmq\_peer\_discovery\_common**     | A plugin for supporting general node discovery, it provides some basic functionalities such as node registration, deregistration, querying, etc., and can be used by other node discovery plugins |
+| **rabbitmq\_peer\_discovery\_consul**     | A plugin for supporting Consul node discovery, it can automatically discover and join RabbitMQ clusters in Consul environments |
+| **rabbitmq\_peer\_discovery\_etcd**       | A plugin for supporting etcd node discovery, it can automatically discover and join RabbitMQ clusters in etcd environments |
+| **rabbitmq\_peer\_discovery\_k8s**        | A plugin for supporting Kubernetes node discovery; it allows you to automatically discover and join RabbitMQ clusters in Kubernetes environments |
+| **rabbitmq\_prometheus**                   | A plugin for supporting Prometheus monitoring; it allows you to collect and display various RabbitMQ metrics using Prometheus |
+| **rabbitmq\_random\_exchange**             | A plugin for implementing random routing, it allows you to create a special exchange that randomly sends messages to one or more queues |
+| **rabbitmq\_recent\_history\_exchange**    | A plugin for implementing recent history routing, it allows you to create a special exchange that sends messages to one or more queues that have recently received messages |
+| **rabbitmq\_sharding**                     | A plugin for implementing sharding, it allows you to create a special queue that distributes messages across multiple sub-queues |
+| **rabbitmq\_shovel**                       | A plugin for forwarding messages, it allows you to define rules to forward messages from one queue or exchange to another |
+| **rabbitmq\_shovel\_management**           | A plugin for managing RabbitMQ shovel, it allows you to view and configure RabbitMQ shovel via a web interface |
+| **rabbitmq\_stomp**                        | A plugin for supporting the STOMP protocol, it allows you to connect to RabbitMQ using STOMP clients, supporting various features |
+| **rabbitmq\_stream**                       | A plugin for supporting stream protocols, it allows you to create a special queue for storing and transmitting large volumes of ordered messages |
+| **rabbitmq\_stream\_management**           | A plugin for managing RabbitMQ streams, it allows you to view and configure RabbitMQ streams via a web interface |
+| **rabbitmq\_top**                          | A plugin for viewing RabbitMQ performance, it provides a command-line interface that allows you to view the usage of various RabbitMQ resources |
+| **rabbitmq\_tracing**                      | A plugin for tracing RabbitMQ messages, it can create traces that record the content and properties of RabbitMQ messages to files or logs |
+| **rabbitmq\_trust\_store**                 | A plugin for managing RabbitMQ's trust store, it allows you to store and update SSL certificates in RabbitMQ |
+| **rabbitmq\_web\_dispatch**                | A plugin for supporting RabbitMQ's web services, it provides a framework for defining and handling HTTP requests within RabbitMQ |
+| **rabbitmq\_web\_mqtt**                    | A plugin for supporting MQTT over WebSockets, it allows you to connect to RabbitMQ using WebSocket clients |
+| **rabbitmq\_web\_mqtt\_examples**          | A plugin for demonstrating MQTT over WebSockets, providing several examples |
+| **rabbitmq\_web\_stomp**                   | A plugin for supporting STOMP over WebSockets, it allows you to connect to RabbitMQ using WebSocket clients |
+| **rabbitmq\_web\_stomp\_examples**         | A plugin for demonstrating STOMP over WebSockets, providing several examples |
+
+### Enable/Disable Plugins Already Included in the Image
+
+When you need to enable or disable plugins already included in the image, you can update the relevant fields in the instance's YAML file. Taking `rabbitmq_shovel` as an example:
+
+```yaml
+additionalPlugins:
+- rabbitmq_top
+- rabbitmq_shovel
+```
+
+### Enable Third-party or Custom Plugins
+
+When you need to enable custom plugins or community plugins that are not included in the image, you cannot directly enable them by editing the additionalPlugins in the YAML. Instead, you must download them into the container before starting the pod.
+
+#### Method 1: Environment Has Access to the Internet
+
+1. Update the spec.override field to add the sts configuration, downloading the plugin in the initContainer.
+2. Update the spec.rabbitmq.envConfig field to add environment variables to configure the plugin path.
+3. Update the spec.rabbitmq.additionalPlugins field to enable the plugin.
+4. After the instance is ready, use the command `rabbitmq-plugins list` to check if the plugin is enabled.
+
+Sample YAML is shown below:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: test
+  namespace: yh-test2
+  labels:
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+spec:
+  version: 3.12.4
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: NodePort
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: test
+          topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_management_exchange
+    envConfig: |
+      RABBITMQ_PLUGINS_DIR=/opt/rabbitmq/plugins:/opt/rabbitmq/community-plugins
+  override:
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rabbitmq
+                volumeMounts:
+                  - mountPath: /opt/rabbitmq/community-plugins
+                    name: community-plugins
+            volumes:
+              - name: community-plugins
+                emptyDir: {}
+            initContainers:
+              - command:
+                  - sh
+                  - -c
+                  - curl -L -v https://github.com/rabbitmq/rabbitmq-management-exchange/releases/download/v3.12.0/rabbitmq_management_exchange-3.12.0.ez --output /community-plugins/rabbitmq_management_exchange-3.12.0.ez
+                image: curlimages/curl  # or other image with curl command
+                imagePullPolicy: IfNotPresent
+                name: copy-community-plugins
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 500Mi
+                  requests:
+                    cpu: 100m
+                    memory: 500Mi
+                terminationMessagePolicy: FallbackToLogsOnError
+                volumeMounts:
+                  - mountPath: /community-plugins/
+                    name: community-plugins
+  persistence:
+    storageClassName: aaaaaa
+    storage: 1Gi
+```
+
+#### Method 2: Environment Cannot Access the Internet
+
+1. Update the spec.override field to add the sts configuration, mounting the plugin to the container through hostPath. Ensure that the folder on the node where the instance gets scheduled exists (in this example, /root/yh/community-plugins) and that the plugin is placed there.
+2. Update the spec.rabbitmq.envConfig field to add environment variables to configure the plugin path.
+3. Update the spec.rabbitmq.additionalPlugins field to enable the plugin.
+4. After the instance is ready, use the command `rabbitmq-plugins list` to check if the plugin is enabled.
+
+Sample YAML is shown below:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: test
+  namespace: yh-test2
+  labels:
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+spec:
+  version: 3.12.4
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: NodePort
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: test
+          topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_management_exchange
+    envConfig: |
+      RABBITMQ_PLUGINS_DIR=/opt/rabbitmq/plugins:/opt/rabbitmq/community-plugins
+  override:
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rabbitmq
+                resources: {}
+                volumeMounts:
+                  - mountPath: /opt/rabbitmq/community-plugins
+                    name: community-plugins
+            initContainers:
+              - command:
+                  - sh
+                  - -c
+                  - cp -r /temp-plugins/* /community-plugins/ && chown 999:999
+                    /community-plugins/* && chmod 755 /community-plugins/*
+                image: registry.alauda.cn:60080/middleware/rabbitmq/rabbitmq3124-management:v3.15.0 # Other images can also be used
+                name: copy-community-plugins
+                resources: {}
+                securityContext:
+                  privileged: true
+                  runAsGroup: 0
+                  runAsUser: 0
+                volumeMounts:
+                  - mountPath: /community-plugins/
+                    name: community-plugins
+                  - mountPath: /temp-plugins/
+                    mountPropagation: Bidirectional
+                    name: temp-plugins
+            volumes:
+              - emptyDir: {}
+                name: community-plugins
+              - hostPath:
+                  path: /root/yh/community-plugins # Directory of plugins on the host
+                  type: Directory
+                name: temp-plugins
+  persistence:
+    storageClassName: aaaaaa
+    storage: 1Gi
+```
+
+## Upgrade Impact Instructions
+
+- When your instance needs an upgrade, ensure that the relevant plugins are enabled in both the pre-upgrade and post-upgrade instance configurations to ensure functionality.
+- If there are deprecated plugins in the community, you should take them offline in a timely manner.
+- When enabling custom or third-party plugins, ensure compatibility across versions.

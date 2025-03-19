@@ -1,0 +1,36 @@
+---
+weight: 80
+sourceSHA: db945bbdf1d4995875dabbe214003ac958ab29cf64051fa77b7ba2a100b30bbb
+---
+
+# Log Inquiry
+
+Understand the instance's running process logs from the container level, such as RabbitMQ error logs. Proper use of logs can help you quickly locate problems and handle faults and exceptions.
+
+**Note**: To save disk space, the platform retains log records for a default of 7 days (up to 30 days). The actual retention duration can be set in the operation and maintenance center under **Logs** > **Policy Management**. If long-term storage is required, please export the logs in a timely manner.
+
+## Prerequisites
+
+If the interface indicates no data, please deploy the **Log Collection Component** and ensure the component is running normally.
+
+## Steps
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Click **RabbitMQ** in the left navigation bar.
+
+    2. Click on ***Namespace Name***.
+
+    3. Click on ***Instance Name***.
+
+    4. Set the search criteria on the **Logs** tab.
+
+       - To search for logs of a specific container group, namely the RabbitMQ replicas: Select a container group at **Container Group** and click **Search**.
+
+       - To search for logs within a specific time range: Select a time period at **Time Range**.
+
+    5. Wait a moment and view the results.
+
+    6. (Optional) Click <span style={{display: "inline-block"}}>![](../assets/44buttonexport.png)</span> to export logs.
+  </Tab>
+</Tabs>

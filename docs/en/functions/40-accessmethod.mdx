@@ -1,0 +1,39 @@
+---
+weight: 40
+sourceSHA: 86686df6d2009ebf9f4bd2596e46579f65335e661915ae48ea5aa771c84a95bc
+---
+
+# Access Methods
+
+Use producers and consumers to deliver messages to RabbitMQ from within or outside the cluster, or through a client.
+
+## How to Obtain the Access Address
+
+RabbitMQ instances support multiple access addresses to meet the needs of different scenarios.
+
+### Access Within the Cluster
+
+Access within the cluster is only available for internal access within the Kubernetes network. There are two options for connection addresses:
+
+- Internal routing (i.e., via DNS)
+- Internal routing IP
+
+Both methods allow access to the RabbitMQ cluster.
+
+Address retrieval path: Instance Details > Access Methods > Access Within the Cluster
+
+### Access Outside the Cluster
+
+Access outside the cluster can be used for external access to the Kubernetes network, such as accessing from another Kubernetes cluster (it can also be used for internal access within the Kubernetes cluster, but this needs to be confirmed against the firewall rules).
+
+Currently, NodePort and LoadBalancer are the two supported methods for external access to the cluster.
+
+Address retrieval path: Instance Details > Access Methods > Access Outside the Cluster
+
+<Directive type="info" title="Development Tip">
+  For guidance on how to connect to RabbitMQ instances to publish and consume messages, please refer to [Client Access](../how_to/10-access).
+</Directive>
+
+## Management Portal
+
+For information regarding accessing and using the RabbitMQ management portal, please refer to [Using RabbitMQ Console](../how_to/plugin/50-managementui).

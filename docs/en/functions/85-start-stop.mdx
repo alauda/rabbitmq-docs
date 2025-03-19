@@ -1,0 +1,56 @@
+---
+weight: 85
+sourceSHA: a143cc218ab7bdfec1ea728ef97ba0cf622b48e75c353c1833d3cc3a3c9f56fb
+---
+
+# Start and Stop Instances
+
+The one-click start and stop functionality meets the daily development and operation needs, allowing you to quickly pause or start middleware instances. In scenarios such as planned downtime, excessive node load, and development testing environments, you may need to temporarily release CPU and memory resources without deleting the instance. The one-click start and stop feature helps you save resources and manage middleware instances flexibly, thereby reducing costs and increasing efficiency.
+
+## Stop Instance
+
+### Prerequisites
+
+The instance is in **Processing**, **Running**, **Abnormal**, or **Unknown** status.
+
+### Operation Steps
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Click **RabbitMQ** in the left navigation bar.
+
+    2. Click ***namespace name***.
+
+    3. Click ***instance name***.
+
+    4. Click **Actions** > **Stop**, and confirm.
+  </Tab>
+</Tabs>
+
+### Functions Unavailable After Stopping
+
+| Function       | Description              |
+| -------- | ------------------ |
+| **Actions**   | Cannot restart, update, or update scheduling configuration. |
+| **Parameter Configuration** | Cannot update or export parameters.    |
+| **Inspection**   | Inspection results for the current instance will be invalid.   |
+
+## Start Instance
+
+### Prerequisites
+
+The instance is in **Stopping** or **Stopped** status.
+
+### Operation Steps
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Click **RabbitMQ** in the left navigation bar.
+
+    2. Click ***namespace name***.
+
+    3. Click ***instance name***.
+
+    4. Click **Actions** > **Start**, and confirm.
+  </Tab>
+</Tabs>

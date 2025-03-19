@@ -1,0 +1,144 @@
+---
+weight: 10
+sourceSHA: 5d96cf9958832aa2f5231a553dbcbd2f90f8f859f70e2fd2a0ec97e41eb1e705
+---
+
+# Client Access
+
+There are various connection methods for business applications to access RabbitMQ instances. This section describes how to access RabbitMQ instances using `Java` and `Python`.
+
+## Applicable Scenarios
+
+| Access Method     | Applicable Scenario                                           |
+| ------------------| ----------------------------------------------------------- |
+| **Access within Cluster** | Applications within the cluster access RabbitMQ instances through ports exposed by SVC. |
+| **Access Outside Cluster** | Applications outside the cluster access RabbitMQ instances through ports of NodePort.<br />Access the management portal via the appropriate instance port. |
+
+## Connecting to RabbitMQ
+
+Prerequisites
+
+1. Refer to [Access Methods](../functions/40-accessmethod) to obtain the specific access address.
+2. Refer to [User Management](../functions/20-user) to get the username and password for the instance.
+
+<Directive type="tip" title="Tip">
+  Make sure to replace `<username>` and `<password>` in the code with the actual account information for the instance.
+
+  Ensure to replace `<ip>` and `<port>` in the code with the actual access address of the instance. In the case of access from outside the cluster, there may be multiple access addresses; you can fill them all in to enhance connection reliability.
+</Directive>
+
+<Tabs>
+  <Tab label="Java Client Example">
+    The Java access example is as follows:
+
+    ```java
+    import com.rabbitmq.client.*;
+
+    import java.io.IOException;
+    import java.nio.charset.StandardCharsets;
+    import java.util.concurrent.TimeoutException;
+    import java.util.HashMap;
+    import java.util.UUID;
+
+    public class ProducerTest {
+        public static void main(String[] args) throws Exception {
+            Address[] addresses = {
+                new Address(<ip 1>,<port 1>),
+                new Address(<ip 2>,<port 2>),
+                new Address(<ip 3>,<port 3>)
+            };
+            String username = "<username>";
+            String password = "<password>";
+            String vhostName = "/";
+            String exchangeName = "testExchange";
+            String exchangeType = "direct";
+            String queueName = "test";
+
+            ConnectionFactory factory = new ConnectionFactory();
+
+            factory.setUsername(username);
+
+            factory.setPassword(password);
+
+            factory.setAutomaticRecoveryEnabled(true);
+            factory.setNetworkRecoveryInterval(5000);
+
+            factory.setVirtualHost(vhostName);
+
+            factory.setConnectionTimeout(30 * 1000);
+            factory.setHandshakeTimeout(30 * 1000);
+            factory.setShutdownTimeout(0);
+
+            Connection connection = factory.newConnection(addresses);
+            Channel channel = connection.createChannel();
+            channel.exchangeDeclare(exchangeName, exchangeType, true, false, false, null);
+            channel.queueDeclare(queueName, true, false, false, new HashMap<String, Object>());
+            channel.queueBind(queueName, exchangeName, "BindingKeyTest");
+
+            for (int i = 0; i < 100; i++  ) {
+                    String message = "Hello World!"+ i;
+                    channel.basicPublish(exchangeName, "BindingKeyTest", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+                    System.out.println(" [x] Sent '" + message + "'");
+            }
+            channel.close();
+            connection.close();
+        }
+    }
+    ```
+
+    For more examples on Java client, please refer to [Java Client API Guide](https://www.rabbitmq.com/client-libraries/java-api-guide).
+  </Tab>
+
+  <Tab label="Python Client Example">
+    The Python access example is as follows:
+
+    ```go
+    import pika
+    import random
+
+    def on_message(channel, method_frame, header_frame, body):
+        print(method_frame.delivery_tag)
+        print(body)
+        print()
+        channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+
+    credentials = pika.PlainCredentials('<username>','<password>')
+    node1 = pika.ConnectionParameters(<ip 1>, <port 1>, '/', credentials)
+    node2 = pika.ConnectionParameters(<ip 2>, <port 2>, '/', credentials)
+    node3 = pika.ConnectionParameters(<ip 3>, <port 3>, '/', credentials)
+    all_endpoints = [node1,node2,node3]
+
+    while(True):
+        try:
+            print("Connecting...")
+
+            random.shuffle(all_endpoints)
+            connection = pika.BlockingConnection(all_endpoints)
+            channel = connection.channel()
+            channel.basic_qos(prefetch_count=1)
+
+            channel.queue_declare('recovery-example', durable = False, auto_delete = True)
+            channel.basic_consume('recovery-example', on_message)
+            try:
+                channel.start_consuming()
+            except KeyboardInterrupt:
+                channel.stop_consuming()
+                connection.close()
+                break
+        except pika.exceptions.ConnectionClosedByBroker:
+            continue
+
+        except pika.exceptions.AMQPChannelError as err:
+            print("Caught a channel error: {}, stopping...".format(err))
+            break
+
+        except pika.exceptions.AMQPConnectionError:
+            print("Connection was closed, retrying...")
+            continue
+    ```
+
+    For more examples on `pika`, please refer to [pika's GitHub repository](https://github.com/pika/pika/tree/main/examples).
+  </Tab>
+</Tabs>
+
+For the use of other clients, please refer to [RabbitMQ Tutorials](https://www.rabbitmq.com/tutorials).

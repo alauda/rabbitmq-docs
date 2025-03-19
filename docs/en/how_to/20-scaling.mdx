@@ -1,0 +1,36 @@
+---
+weight: 20
+sourceSHA: 841c44f4f8b4d5e54c2a1c5f1cb85643a0d07f612ebdea40ca502b8e96db936b
+---
+
+# Specification Change
+
+With the growth of data volume, timely scaling must be performed before resource usage approaches the storage quota to ensure continuous business availability.
+
+## Restriction Description
+
+1. If you have set scheduling-related configurations for the current instance, changes in the number of replicas must comply with the current scheduling configuration.
+
+2. It is recommended to scale all nodes to the same specification in order to enhance the performance and reliability of the cluster.
+
+3. When changing CPU and memory resources, please evaluate based on business conditions and resource availability to avoid instance scaling failures due to insufficient or excessive resources, which may lead to the instance not being able to start normally.
+
+## Operation Steps
+
+<Tabs>
+  <Tab label="Web Console">
+    1. In the left navigation bar, click **RabbitMQ**.
+
+    2. Click ***namespace name***.
+
+    3. Click ***instance name***.
+
+    4. Under the **Details** tab, click **Specification Change** above the topology.
+
+    5. Fill in the desired number of replicas and new specifications for the corresponding resources.
+
+    6. Click **Update**.
+
+       After a short wait, you will see the **Specifications** in the topology has increased accordingly.
+  </Tab>
+</Tabs>

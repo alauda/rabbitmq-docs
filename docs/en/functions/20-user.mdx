@@ -1,0 +1,58 @@
+---
+weight: 20
+sourceSHA: 675cdf5dcfb59d1e2565c1802f62b3c1769ad4ef4f144df91ac098da7fe3243e
+---
+
+# User Management
+
+## Username and Password
+
+<Directive type="info" title="Note">
+  **Attention**: The default user **guest** of RabbitMQ has a publicly known password. To ensure environmental security, this user has been disabled on the platform. A randomly generated user provided by the platform can be used for accessing the instance.
+</Directive>
+
+When creating an instance, a random admin account will be generated, and the account information will be stored in a secret resource named `<Instance name>-default-user`. For example:
+
+```yaml
+apiVersion: v1
+data:
+  default_user.conf: ZGVmYXVsdF91c2VyPWFkbWluCmRlZmF1bHRfcGFzcz1hZG1pbjEyM18=
+  password: YWRtaW4xMjNf
+  provider: cmFiYml0bXE=
+  type: cmFiYml0bXE=
+  username: YWRtaW4=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: rabbitmq
+    app.kubernetes.io/name: rrrr
+    app.kubernetes.io/part-of: rabbitmq
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+  name: rrrr-default-user
+type: Opaque
+```
+
+Here, `username` corresponds to the default username for accessing RabbitMQ, and `password` corresponds to the default user's password.
+
+<Directive type="warning" title="Warning">
+  This secret is read-only and cannot be updated directly to change the password. Otherwise, it may cause the instance to malfunction.
+</Directive>
+
+<Tabs>
+  <Tab label="CLI">
+    Use the following commands to directly parse the default user's username and password.
+
+    ```bash
+    # Get the username
+    kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.username}' | base64 -d
+
+    # Get the password
+    kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.password}' | base64 -d
+    ```
+  </Tab>
+
+  <Tab label="Web Console">
+    On the instance details page, click on the secret dictionary to view the username and password in the Container Platform.
+  </Tab>
+</Tabs>

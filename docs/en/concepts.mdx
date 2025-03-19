@@ -1,0 +1,71 @@
+---
+weight: 30
+i18n:
+  title:
+    en: Concepts
+sourceSHA: 7595503d644598828964ce22f394cea74b68f0457b8cd73ec4c30463c1a2efaa
+title: Concepts
+---
+
+# Core Concepts
+
+## Exchange
+
+There are various types of exchanges to accommodate different message distribution models.
+
+### Direct Exchange
+
+A direct exchange routes messages to queues based on the message routing key. Direct exchanges are ideal for unicast routing of messages, but they can also be used for multicast routing.
+
+The operation works as follows:
+
+- Queues are bound to the exchange using the routing key K.
+- When a new message arrives at the direct exchange with a routing key R, if K = R, the exchange routes it to the queue.
+- If multiple queues are bound to a direct exchange with the same routing key K, the exchange will route the message to all queues where K = R.
+
+![Direct Message Distributor](./assets/rabbitmq-exchange-direct.png)
+
+### Fanout Exchange
+
+A fanout exchange routes messages to all queues bound to it, ignoring the routing key. If N queues are bound to a fanout exchange, when a new message is published to the exchange, a copy of that message will be delivered to all N queues. Fanout exchanges are particularly suited for broadcasting messages.
+
+Because a fanout exchange delivers copies of messages to each queue it is bound to, its use cases are quite similar:
+
+- Massive Multiplayer Online (MMO) games can use it to update leaderboards or other global activities.
+- Sports news websites can utilize fanout exchanges to distribute score updates to mobile clients almost in real-time.
+- Distributed systems can broadcast various status and configuration updates.
+- Group chats can use fanout exchanges to disseminate messages among participants (though AMQP does not have an inherent concept of presence, making XMPP possibly a better choice).
+
+![Fanout Message Distributor](./assets/rabbitmq-exchange-fanout.png)
+
+### Topic Exchange
+
+A topic exchange routes messages to one or more queues based on the matching of the message routing key with the pattern used to bind the queues to the exchange. Topic exchange types are commonly used to implement various variants of the publish/subscribe model. Topic exchanges are generally used for multicast routing of messages.
+
+Topic exchanges have a very broad range of use cases. Whenever issues involve multiple consumers or applications selectively choosing the types of messages they want to receive, topic exchanges should be considered.
+
+### Headers Exchange
+
+A headers exchange is designed to route based on multiple attributes that are more easily represented as message headers than routing keys. Headers exchanges ignore the routing key attribute. Instead, the attributes used for routing are taken from the headers attribute. If the header values are equal to those specified at the time of binding, the message is considered a match.
+
+Multiple headers can be used to bind queues to a headers exchange for matching. In this case, the broker requires an additional piece of information from the application developer, specifically whether it should consider messages that match any of the headers or all of the headers. This is what the "x-match" binding parameter is for. When the "x-match" parameter is set to "any", only one matching header value is needed. Alternatively, setting "x-match" to "all" enforces that all values must match.
+
+## Queue
+
+Queues in the AMQP 0-9-1 model are very similar to those in other messaging and task queue systems: they are used to store messages that applications use. Queues share some properties with exchanges, but also have some additional properties:
+
+- Name
+- Durable: The queue will persist after the broker restarts.
+- Exclusive: Only used by one connection, and the queue will be deleted when that connection closes.
+- Auto-delete: The queue will be deleted when the last consumer unsubscribes, provided there is at least one consumer.
+- Arguments: Optional, used by plugins and broker-specific features, such as message TTL, queue length limits, etc.
+
+Queues must be declared before they can be used. Declaring a queue will create it if it does not already exist. If the queue already exists and its properties match those in the declaration, the declaration will be ignored. If the properties of the existing queue differ from those in the declaration, a channel-level exception with code 406 (PRECONDITION_FAILED) will be raised.
+
+## Binding
+
+A binding refers to the rules that route messages from an exchange to a queue. For an exchange E to route messages to a queue Q, the queue Q must be bound to the exchange E. Bindings can have optional routing key attributes that are used by certain types of exchanges. The routing key serves as a filter to help determine which bound queues should receive messages when they are published to the exchange.
+
+Having this layer of indirection allows for routing schemes that would be impossible or difficult to achieve by directly publishing to the queue, and it also eliminates a certain amount of duplication of work that application developers would have to perform.
+
+If a message cannot be routed to any queue (for example, because there are no bindings with the exchange it was published to), the message will be discarded or returned to the publisher, depending on the message properties set by the publisher.

@@ -1,0 +1,166 @@
+---
+weight: 10
+sourceSHA: faff3f995cb480a65e6755e4df0b1e9367b69eea0a3b8e2d04fcf0428091434e
+---
+
+# Create Instance
+
+RabbitMQ is a popular message queue middleware that features an efficient and reliable message asynchronous delivery mechanism. It is mainly used for data exchange and transmission between different systems and has a wide range of applications in various fields such as enterprise solutions, financial payments, telecommunications, e-commerce, social networking, instant messaging, video, the Internet of Things, and vehicle networking.
+
+In the current version, the following versions of RabbitMQ are supported: `3.8.16` and `3.12`. When creating an instance, only these two versions can be selected. The instance creation process will use `3.12` as an example.
+
+<Directive type="tip" title="Suggestion">
+  When selecting a version, it is recommended to choose the latest supported version. `3.12` has the following advantages:
+
+  1. `3.12` supports production-ready quorum queues; additionally, the community has fixed many bugs, and performance has greatly improved in `3.12`.
+  2. `3.8.x` will be gradually phased out. If you are currently using the `3.8.x` series and later require version upgrades, it may impact business operations.
+</Directive>
+
+## Create RabbitMQ Instance
+
+### Prerequisites
+
+- Please ensure that there is an available storage class in the current cluster and that there is sufficient available space.
+
+### Steps
+
+<Tabs>
+  <Tab label="CLI">
+    Create a RabbitMQ instance via CLI:
+
+    ```bash
+    cat << EOF | kubectl -n default create -f -
+    apiVersion: rabbitmq.com/v1beta1
+    kind: RabbitmqCluster
+    metadata:
+      name: rrrr
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: cluster-in
+              topologyKey: kubernetes.io/hostname
+      persistence:
+        storage: 1Gi
+        storageClassName: sc-topolvm
+      rabbitmq:
+        additionalConfig: |-
+          channel_max=1000
+          cluster_keepalive_interval=10000
+          collect_statistics=none
+          collect_statistics_interval=5000
+          default_vhost=/
+          delegate_count=16
+          disk_free_limit.absolute=50MB
+          handshake_timeout=10000
+          heartbeat=60
+          max_message_size=134217728
+          mirroring_sync_batch_size=4096
+          mnesia_table_loading_retry_limit=10
+          mnesia_table_loading_retry_timeout=30000
+          num_acceptors.tcp=10
+          queue_index_embed_msgs_below=4096
+          raft.wal_max_size_bytes=64000000
+          vm_memory_calculation_strategy=allocated
+          vm_memory_high_watermark.relative=0.4
+          vm_memory_high_watermark_paging_ratio=0.5
+      replicas: 3
+      resources:
+        limits:
+          cpu: 1
+          memory: 2Gi
+        requests:
+          cpu: 1
+          memory: 2Gi
+      service:
+        type: ClusterIP
+      upgradeOption:
+        autoUpgrade: false
+      version: "3.12"
+    EOF
+    ```
+
+    > For detailed field information, please refer to [RabbitMQ API Documentation](../apis/kubernetes_apis/rabbitmq/rabbitmq).
+
+    After the instance is created, you can view the instance with the following command:
+
+    ```bash
+    $ kubectl -n default get rabbitmqclusters
+    NAME   AGE
+    rrrr   74s
+    ```
+
+    You can use the following custom command to view the status of the instances in bulk:
+
+    ```bash
+    $ kubectl -n default get rabbitmqclusters rrrr -o custom-columns='NAME:.metadata.name,PHASE:.status.phase,USER SECRET:.status.defaultUser.secretReference.name'
+    NAME   PHASE    USER SECRET
+    rrrr   Active   rrrr-default-user
+    ```
+
+    The meaning of the output table fields is as follows:
+
+    | Field         | Description                                                                                                                                                                                                                  |
+    | :----------   | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | NAME          | Instance name                                                                                                                                                                                                                |
+    | PHASE         | Instance status, which can be in the following states: <ul><li>`Creating`: The instance is creating resources and initializing the cluster</li><li>`Updating`: The instance configuration is being updated</li><li>`Active`: The instance is in service status</li><li>`Failed`: The instance encountered an error during initialization or update</li><li>`Unknown`: The instance is in an unrecognized state</li><li>`Paused`: The instance is paused and the related Pods have been shut down</li></ul> |
+    | USER SECRET   | Secret that stores the default user account information                                                                                                                                                                   |
+  </Tab>
+
+  <Tab label="Web Console">
+    1. In the left navigation bar, click **RabbitMQ**.
+
+    2. Click on the ***namespace name***.
+
+    3. Click **Create RabbitMQ Instance**.
+
+    4. Refer to the following instructions to configure the relevant parameters.
+
+    <table>
+      <tr>
+        <th nowrap>Configuration</th>
+        <th>Parameter Item</th>
+        <th>Description</th>
+      </tr>
+
+      <tr>
+        <td><b>Parameter Configuration</b></td>
+        <td><b>Parameter Template</b></td>
+        <td>You can select a system or custom parameter template; for custom templates, please refer to <a href="">Parameter Templates</a>.</td>
+      </tr>
+
+      <tr>
+        <td nowrap><b>Resource Configuration</b></td>
+        <td><b>Storage Class</b></td>
+        <td>If no available storage class is found in the dropdown list, please contact the <b>platform administrator</b> to add one.</td>
+      </tr>
+
+      <tr>
+        <td nowrap><b>Connection Configuration</b></td>
+        <td><b>Specify Host Port</b></td>
+        <td>This configuration option appears when selecting external cluster access.<br /><b>Note</b>: When updating the instance, the port does not support swapping. If you need to swap ports, you can first update to another unused port and then respecify.</td>
+      </tr>
+
+      <tr>
+        <td rowspan="2"><b>Scheduling Configuration</b></td>
+        <td><b>Node Labels</b></td>
+        <td>This filters available nodes in the current cluster by labels. Pods will be scheduled to available nodes.<br /><b>Note</b>: After the instance is created, this configuration is no longer modifiable.</td>
+      </tr>
+
+      <tr>
+        <td><b>Pod Tolerations</b></td>
+        <td>If the available nodes have been tainted, only Pods with tolerations will tolerate these taints and may be scheduled to nodes matching the Pod tolerations and node taints. The matching rules are as follows: <ul><li><b>Equal</b>: When the <i>key</i>, <i>value</i>, and <i>effect</i> of the Pod toleration exactly match the corresponding values in the node taint, the Pod will tolerate the node taint.</li><li><b>Exists</b>: When the <i>key</i> and <i>effect</i> of the Pod toleration are consistent with the corresponding values in the node taint, the Pod will tolerate the node taint.</li></ul><b>Description</b>: The effect determines whether Pods that do not tolerate node taints will be assigned to nodes with taints. For example, if the effect is NoExecute, only pods that tolerate the taints can be scheduled, and pods already running on the node that do not tolerate the taints will be evicted. For more information on matching rules, refer to <a href="https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/taint-and-toleration/">Kubernetes Official Documentation</a>.</td>
+      </tr>
+    </table>
+
+    5. Click **Create**. Wait for the instance status to change to **Running**, indicating that the instance has been created successfully.
+
+    6. Proceed with message delivery.
+  </Tab>
+</Tabs>
+
+<Directive type="info" title="Tip">
+  For the connection methods of business applications accessing RabbitMQ instances, please refer to [Select Connection Address and Configure Connection Method](../how_to/10-access).
+</Directive>

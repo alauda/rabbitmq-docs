@@ -1,0 +1,70 @@
+---
+weight: 30
+sourceSHA: bd1ace3a4a19ea2ac8f26e44c6b4f81a20b7897a3b4e82d341c384c981ed1935
+---
+
+# Minor Version Upgrade
+
+With the needs for vulnerability fixes or new feature releases, middleware may undergo a minor version upgrade. During the minor version upgrade process, Pods will be restarted one by one, which may cause temporary disruptions in service. Therefore, it is recommended to choose an appropriate time window for the upgrade. When a minor version is available for upgrade, it is advised to upgrade as soon as possible to apply the latest fixes for components.
+
+## Set Minor Version Upgrade Strategy
+
+### Steps to Operate
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Navigate to the instance details page.
+
+    2. Click on **Minor Version Upgrade Strategy**.
+
+    3. Choose **Manual** or **Automatic**.
+
+    4. Click **Update** to complete the setup.
+  </Tab>
+</Tabs>
+
+## Minor Version Upgrade
+
+### Prerequisites
+
+When a minor version is available, the instance list page will display an upgrade icon, and the instance details page will show an upgrade prompt.
+
+### Steps to Operate
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Navigate to the instance details page.
+
+    2. Click on **Upgrade Now** next to the upgrade prompt.
+
+    3. Read the upgrade prompt to understand the changes in the versions of components and plugins.
+
+    4. Click **Upgrade Now**.
+
+    5. Wait for the instance status to change to Running, indicating a successful upgrade.
+  </Tab>
+</Tabs>
+
+## Bulk Minor Version Upgrade
+
+### Prerequisites
+
+Users must have platform administrator permissions.
+
+### Steps to Operate
+
+<Tabs>
+  <Tab label="Web Console">
+    1. In the left navigation bar, click on **Operators**.
+
+    2. Select the required **operator** to enter the operator details page.
+
+    3. Select the instances to be upgraded and click **Bulk Upgrade**.
+
+    4. Read the upgrade prompt to understand the changes in the versions of components and plugins.
+
+    5. Click **Upgrade Now**.
+
+    6. Wait for the instance status to change to Running, indicating a successful upgrade.
+  </Tab>
+</Tabs>

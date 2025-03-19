@@ -1,0 +1,33 @@
+---
+weight: 90
+sourceSHA: 59d296d0b6e20ddb210efc46edbd206b6296b2578a1f6aff7966eaa6cdb44e0b
+---
+
+# Restarting an Instance
+
+When an instance encounters operational failures, excessive connection counts, or other unidentified issues during its runtime, you can resolve these problems by restarting the instance.
+
+## Precautions
+
+During the restart process, Pods will be restarted one by one, which may cause a brief interruption in services.
+
+## Prerequisites
+
+The instance must be in **Running** status.
+
+**Note**:
+
+- If the instance is in **Processing** status, this indicates that the instance is likely in the process of starting up normally. Please be patient.
+
+- If the instance fails to start or experiences anomalies, resulting in it being in **Processing** or **Error** status, it will automatically restart after the health check times out. Please be patient.
+
+## Steps to Operate
+
+<Tabs>
+  <Tab label="Web Console">
+    1. Click on **RabbitMQ** in the left navigation bar.
+    2. Click on ***namespace name***.
+    3. Click on ***instance name***.
+    4. Click on **Actions** > **Restart**, and confirm.
+  </Tab>
+</Tabs>
