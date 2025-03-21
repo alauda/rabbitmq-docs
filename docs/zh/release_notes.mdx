@@ -1,47 +1,30 @@
 ---
-weight: 40
+weight: 20
 i18n:
   title:
-    en: Release Notes
+    zh: 发布说明
+sourceSHA: c10eed2547e5e047571ea64f445f35b2bc602eb59aa78d814f12fc2190340031
 ---
 
-:::tip
+# 发布说明
 
-可以访问[发版说明示例](https://product-doc-guide.alauda.cn/template/release_notes/example.html)查看对应文档的示例。
+## v4.0.0
 
-:::
+### 新增和优化的功能
 
-# 发版说明
+#### 组件-平台解耦
 
-## \<小版本号: 例如 2.0.0 \>
+灵雀云的RabbitMQ流服务的生命周期与平台的解耦，这意味着当客户需要某个功能或修复某个bug时，RabbitMQ团队可以立即发布，而无需等待平台的共同发布。
 
-### 新增及优化功能
+#### 组件详情页的实时日志
 
-#### \<功能名称\>
-对新增或优化功能进行简单介绍。
+RabbitMQ详情页上的日志已被实时日志替代，实时更新，方便故障排查和问题分析。
 
+#### 新版本支持
 
-### 下线功能
+灵雀云的RabbitMQ流服务现在支持RabbitMQ服务器v3.12.14。
 
-#### \<功能名称\>
-对下线功能进行简单介绍，建议介绍下线原因以及替代方案。
-
-
-### 即将下线功能
-
-#### \<功能名称\>
-对即将下线功能进行简单介绍，建议介绍下线原因以及替代方案。
-
-
-### 修复问题
-
-修复问题列表可以通过文档框架提供的 `release-notes-for-bugs` 组件自动根据 JIRA 问题生成。
-
-使用方式参见 [自动生成发版问题列表指南](https://product-doc-guide.alauda.cn/guide/auto_gen_releasenotes.html)。
-
+### 修复的问题
 
 ### 已知问题
 
-和修复问题相同，通过文档框架提供的 `release-notes-for-bugs` 组件自动根据 JIRA 问题生成。
-
-使用方式参见 [自动生成发版问题列表指南](https://product-doc-guide.alauda.cn/guide/auto_gen_releasenotes.html)。
