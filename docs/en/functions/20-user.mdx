@@ -45,14 +45,14 @@ Here, `username` corresponds to the default username for accessing RabbitMQ, and
 
     ```bash
     # Get the username
-    kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.username}' | base64 -d
+    $ kubectl -n <namespace> get secret <instance name>-default-user -o jsonpath='{.data.username}' | base64 -d
 
     # Get the password
-    kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.password}' | base64 -d
+    $ kubectl -n <namespace> get secret <instance name>-default-user -o jsonpath='{.data.password}' | base64 -d
     ```
   </Tab>
 
   <Tab label="Web Console">
-    On the instance details page, click on the secret dictionary to view the username and password in the Container Platform.
+    On the instance details page, click on the secret dictionary to view the username and password in **Alauda Container Platform**.
   </Tab>
 </Tabs>

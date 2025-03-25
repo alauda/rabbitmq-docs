@@ -1,6 +1,6 @@
 title: Alauda Streaming Service for RabbitMQ
 logoText: Alauda Streaming Service for RabbitMQ
-lang: zh
+lang: en
 api:
   crds:
     - docs/shared/crds/*.yaml

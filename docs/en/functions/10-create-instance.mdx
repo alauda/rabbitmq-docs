@@ -9,7 +9,7 @@ RabbitMQ is a popular message queue middleware that features an efficient and re
 
 In the current version, the following versions of RabbitMQ are supported: `3.8.16` and `3.12`. When creating an instance, only these two versions can be selected. The instance creation process will use `3.12` as an example.
 
-<Directive type="tip" title="Suggestion">
+<Directive type="tip" title="Version Suggestion">
   When selecting a version, it is recommended to choose the latest supported version. `3.12` has the following advantages:
 
   1. `3.12` supports production-ready quorum queues; additionally, the community has fixed many bugs, and performance has greatly improved in `3.12`.
@@ -29,7 +29,7 @@ In the current version, the following versions of RabbitMQ are supported: `3.8.1
     Create a RabbitMQ instance via CLI:
 
     ```bash
-    cat << EOF | kubectl -n default create -f -
+    $ cat << EOF | kubectl -n default create -f -
     apiVersion: rabbitmq.com/v1beta1
     kind: RabbitmqCluster
     metadata:
