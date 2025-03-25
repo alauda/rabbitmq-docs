@@ -15,7 +15,7 @@ The RabbitMQ instance defaults to the system parameters provided by RabbitMQ. Yo
   Updating parameters will cause the instance to restart. For the stability of your application, please update parameters during off-peak hours.
 </Directive>
 
-## Operating Steps
+## Steps
 
 <Tabs>
   <Tab label="CLI">
@@ -23,7 +23,7 @@ The RabbitMQ instance defaults to the system parameters provided by RabbitMQ. Yo
 
     ```bash
     # Update the data node configuration of the s6 instance
-    kubectl -n default patch rabbitmqclusters <instance name> --type=merge --patch='{"spec": {"rabbitmq": {"additionalConfig":"channel_max=1000"}}}''
+    $ kubectl -n default patch rabbitmqclusters <instance name> --type=merge --patch='{"spec": {"rabbitmq": {"additionalConfig":"channel_max=1000"}}}''
     ```
   </Tab>
 
@@ -34,7 +34,7 @@ The RabbitMQ instance defaults to the system parameters provided by RabbitMQ. Yo
 
     3. Click on ***instance name***.
 
-    4. Under the **Parameter Configuration** tab, click **Update Parameters**.
+    4. Under the **Parameter** tab, click **Update Parameters**.
 
     5. Set the parameters.
 

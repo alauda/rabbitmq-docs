@@ -7,7 +7,7 @@ sourceSHA: b66b1dea338a726bc84a3dcd1d17b31203cfd4132b88c6968f44c5f555cb417b
 
 Deleting an instance will not only remove the created CR resources but also delete the StatefulSet, Service, ConfigMap, Secret, PersistentVolumeClaim, and other resources created by RabbitMQ based on the CR resources.
 
-## Steps to Operate
+## Steps
 
 <Tabs>
   <Tab label="CLI">
@@ -15,13 +15,13 @@ Deleting an instance will not only remove the created CR resources but also dele
 
     ```bash
     # delete rabbitmq instance directly
-    kubectl -n default delete rabbitmqclusters <Instance Name>
+    $ kubectl -n default delete rabbitmqclusters <Instance Name>
     ```
 
     By default, deleting the instance will not remove the created PVC. You can use the following command to delete it:
 
     ```bash
-    kubectl -n default delete pvc -l app.kubernetes.io/component=rabbitmq,app.kubernetes.io/part-of=rabbitmq,app.kubernetes.io/name=<Instance Name>
+    $ kubectl -n default delete pvc -l app.kubernetes.io/component=rabbitmq,app.kubernetes.io/part-of=rabbitmq,app.kubernetes.io/name=<Instance Name>
     ```
   </Tab>
 
