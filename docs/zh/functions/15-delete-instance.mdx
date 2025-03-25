@@ -1,50 +1,45 @@
 ---
 weight: 15
+sourceSHA: 1104150cc66f432b11690a2b6d083bc142d3d10246c418c17c39f084eea7b8d3
 ---
 
 # 删除实例
 
-删除实例除了删除创建的 CR 资源，还会删除 RabbitMQ 根据 CR 资源创建的 Statefulset，Service, Configmap，Secret, PersistentVolumeClaim 等资源。
+删除实例不仅会删除创建的 CR 资源，还会删除 StatefulSet、Service、ConfigMap、Secret、PersistentVolumeClaim 以及 RabbitMQ 基于 CR 资源创建的其他资源。
 
-## 操作步骤
+## 步骤
 
 <Tabs>
+  <Tab label="CLI">
+    如果实例尚未配置持久性，或者需要保留实例的持久数据，请执行以下命令删除实例：
 
-<Tab label="CLI">
+    ```bash
+    # 直接删除 rabbitmq 实例
+    $ kubectl -n default delete rabbitmqclusters <实例名称>
+    ```
 
-如果实例没有开启持久化，或者需要保留实例的持久化数据，执行以下命令来删除实例：
+    默认情况下，删除实例不会移除创建的 PVC。您可以使用以下命令将其删除：
 
-```bash
-# delete rabbitmq instance directly
-kubectl -n default delete rabbitmqclusters <Instance Name>
-```
+    ```bash
+    $ kubectl -n default delete pvc -l app.kubernetes.io/component=rabbitmq,app.kubernetes.io/part-of=rabbitmq,app.kubernetes.io/name=<实例名称>
+    ```
+  </Tab>
 
-删除实例默认不会删除创建的 PVC，可使用如下命令删除:
+  <Tab label="Web 控制台">
+    1. 在左侧导航栏中，点击 **RabbitMQ**。
 
-```bash
-kubectl -n default delete pvc -l app.kubernetes.io/component=rabbitmq,app.kubernetes.io/part-of=rabbitmq,app.kubernetes.io/name=<Instance Name>
-```
+    2. 点击 ***命名空间名称***。
 
-</Tab>
+    3. 在实例列表中，选择要删除的实例，进入实例详细信息页面。
 
-<Tab label="Web Console">
+    4. 在 **实例详细信息** 页面右上角，点击 **操作** 按钮展开功能菜单。
 
-1. 在左侧导航栏中，单击 **RabbbitMQ**。
+    5. 在功能菜单中点击 **删除**，将弹出删除确认对话框。
 
-2. 单击 ***命名空间的名称***。
+    6. 对于启用数据持久性的实例，您可以勾选“删除持久卷声明”以释放存储，或者不勾选以保留数据。
 
-3. 在实例列表中选择要删除的实例，进入实例详情页面。
+    7. 在弹出对话框中，输入要删除的实例名称。
 
-4. 在**实例详情** 页面的右上角，点击**操作**按钮，展开功能菜单。
-
-5. 点击功能菜单中的**删除**，会弹出删除确认框。
-
-6. 对开启了数据持久化的实例，可勾选“删除持久卷申明”来释放存储，或者不勾选来保留数据。
-
-7. 在弹出框中数据要删除的实例名称
-
-8. 点击**删除**
-
-</Tab>
-
+    8. 点击 **删除**。
+  </Tab>
 </Tabs>

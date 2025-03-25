@@ -1,16 +1,17 @@
 ---
 weight: 20
+sourceSHA: dc18a9b398a1618455eda275d732dd0e7b1906bac99294e6a0ea6d4ddbae069b
 ---
 
 # 用户管理
 
 ## 用户名和密码
 
-<Directive type="info" title="提示">
-**注意**：由于 RabbitMQ 默认用户 **guest** 的密码已公开，为确保环境安全，平台已禁用该用户。访问实例时可使用平台随机生成的用户。
+<Directive type="info" title="注意">
+  **注意**：RabbitMQ 的默认用户 **guest** 具有一个公开已知的密码。为了确保环境安全，该用户在平台上已被禁用。可以使用平台提供的随机生成用户来访问实例。
 </Directive>
 
-在创建实例是，会创建一个随机的管理员账户，同时将该账户信息存储到名称满足 `<Instance name>-default-user` 的 secret 资源内。例如:
+在创建实例时，会生成一个随机的管理员账户，账户信息将存储在名为 `<实例名称>-default-user` 的秘密资源中。例如：
 
 ```yaml
 apiVersion: v1
@@ -32,30 +33,26 @@ metadata:
 type: Opaque
 ```
 
-其中`username` 对应访问 RabbitMQ 的默认用户名，`password` 对应默认用户的密码。
+这里，`username` 对应于访问 RabbitMQ 的默认用户名，`password` 对应于默认用户的密码。
 
 <Directive type="warning" title="警告">
-该 secret 是只读的，无法直接更新该 secret 来更新密码。否则会导致实例异常。
+  此秘密为只读，不能直接更新以更改密码。否则，可能会导致实例发生故障。
 </Directive>
 
 <Tabs>
-<Tab label="CLI">
+  <Tab label="命令行界面">
+    使用以下命令直接解析默认用户的用户名和密码。
 
-通过如下命令直接解析到默认用户的用户名和密码。
+    ```bash
+    # 获取用户名
+    $ kubectl -n <namespace> get secret <实例名称>-default-user -o jsonpath='{.data.username}' | base64 -d
 
-```bash
-# 获取用户名
-kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.username}' | base64 -d
+    # 获取密码
+    $ kubectl -n <namespace> get secret <实例名称>-default-user -o jsonpath='{.data.password}' | base64 -d
+    ```
+  </Tab>
 
-# 获取密码
-kubectl -n default get secret <instance name>-default-user -o jsonpath='{.data.password}' | base64 -d
-```
-
-</Tab>
-
-<Tab label="Web Console">
-
-在实例详细信息页，单击保密字典转至 Container Platform 查看用户名和密码。
-
-</Tab>
+  <Tab label="网络控制台">
+    在实例详情页面，点击秘密字典以查看 **Alauda 容器平台** 中的用户名和密码。
+  </Tab>
 </Tabs>
