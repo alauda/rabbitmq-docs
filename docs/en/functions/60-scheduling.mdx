@@ -1,0 +1,36 @@
+---
+weight: 50
+---
+
+# Scheduling Configuration
+
+Alauda Streaming Service for RabbitMQ supports dynamic updates to Pod scheduling configurations when node taints change. You can add, modify, or remove Pod tolerations without disrupting the ongoing RabbitMQ service.
+
+## Considerations
+
+- **Pod Relocation Limitations**: Pod migration is not supported during scheduling configuration updates. When modifying Pod tolerations, ensure that the nodes selected post-update include all nodes that were part of the deployment prior to the update.
+
+- **Node Availability Requirements**: If you have configured node labels for scheduling, the number of nodes matching both Pod tolerations and node taints must be greater than or equal to the replica count. Additionally, the updated node selection must either match the previously available nodes or include new nodes in addition to the original node set for the scheduling configuration to update successfully.
+
+## Steps
+
+<Tabs>
+  <Tab label="Web Console">
+    1. In the left navigation bar, click on **RabbitMQ**.
+
+    2. Click on ***namespace name***.
+
+    3. Click on ***instance name***.
+
+    4. Click on the **Actions** button in the upper right corner > **Update Scheduling Configuration**.
+
+    5. Modify the scheduling configuration as needed:
+       - Update node labels to refine the selection of eligible nodes
+       - Add or modify tolerations to accommodate changes in node taints
+       - Adjust affinity rules to optimize instance placement
+
+    6. Click **Update** to apply the changes.
+  </Tab>
+</Tabs>
+
+After updating the scheduling configuration, the system will apply the changes while maintaining service continuity. The Operator will respect the new scheduling parameters when creating or replacing Pods during subsequent operations.
