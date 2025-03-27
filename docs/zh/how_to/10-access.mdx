@@ -1,9 +1,9 @@
 ---
 weight: 10
-sourceSHA: b14dcbb65070cc3e222a09e35e512cf54728bc6dd3e2a493f6c4d3a7e7e778a3
+sourceSHA: 21330aa2963de4fb1c424edce125181b1eff3262effbe8d3703d27eafaf9318a
 ---
 
-# 客户端访问
+# 客户端连接
 
 有多种连接方法供业务应用程序访问 RabbitMQ 实例。本节描述了如何使用 `Java` 和 `Python` 访问 RabbitMQ 实例。
 
@@ -14,7 +14,7 @@ sourceSHA: b14dcbb65070cc3e222a09e35e512cf54728bc6dd3e2a493f6c4d3a7e7e778a3
 | **集群内访问**           | 集群内的应用程序通过 SVC 暴露的端口访问 RabbitMQ 实例。                                                                                          |
 | **集群外访问**           | 集群外的应用程序通过 NodePort 的端口访问 RabbitMQ 实例。<br />通过适当的实例端口访问管理门户。 |
 
-## 连接至 RabbitMQ
+## 连接到 RabbitMQ
 
 先决条件
 
@@ -110,7 +110,7 @@ sourceSHA: b14dcbb65070cc3e222a09e35e512cf54728bc6dd3e2a493f6c4d3a7e7e778a3
 
     while(True):
         try:
-            print("正在连接...")
+            print("连接中...")
 
             random.shuffle(all_endpoints)
             connection = pika.BlockingConnection(all_endpoints)
