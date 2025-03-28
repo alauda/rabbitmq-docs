@@ -1,34 +1,34 @@
 ---
 weight: 10
-sourceSHA: 08a0bde5ba74a04ac52c53656f2be1c1523596f53ffd62b484f08245455954a3
+sourceSHA: 7a2db11d33c294699ba950c175f5ddcc145829f606e93d9bed4776188ea0e8d6
 ---
 
-# 概述
+# 简介
 
 ## 什么是 RabbitMQ？
 
-RabbitMQ 是一个开源的消息代理和队列服务器，实现了高级消息排队协议（AMQP）。简单来说，RabbitMQ 充当应用程序之间的通信桥梁，使不同系统能够异步传输和处理消息。这为构建解耦、可扩展和弹性的分布式系统提供了强大的基础。
+RabbitMQ 是一个开源的消息代理和队列服务器，实施了高级消息队列协议（AMQP）。简单来说，RabbitMQ 充当不同应用程序之间的通信桥梁，允许不同系统异步传输和处理消息。这为构建解耦、可扩展和具有弹性的分布式系统提供了坚实的基础。
 
 ### 核心优势
 
-- **可靠性：** RabbitMQ 提供多种消息确认机制和持久化选项，确保消息在传输过程中的可靠性和持久性，即使在系统故障的情况下也能防止数据丢失。
-- **灵活性：** RabbitMQ 支持多种消息路由策略和交换类型，能够灵活适应各种消息传递模式和应用场景。
-- **可扩展性：** RabbitMQ 可以通过集群部署扩展其处理能力和吞吐量，以满足高并发和大规模应用的需求。
+- **可靠性：** RabbitMQ 提供多种消息确认机制和持久性选项，确保在传输过程中消息的可靠性和耐久性，即使在系统故障的情况下，也能防止数据丢失。
+- **灵活性：** RabbitMQ 支持多种消息路由策略和交换类型，能够灵活适应各种消息模式和应用场景。
+- **可扩展性：** RabbitMQ 可以通过集群部署扩展处理能力和吞吐量，以满足高并发和大规模应用的需求。
 - **易用性：** RabbitMQ 提供用户友好的管理界面和丰富的客户端库，方便用户进行配置、监控和集成。
-- **广泛的应用场景：** RabbitMQ 广泛用于微服务架构、异步任务处理、日志聚合、消息通知等多个领域。
+- **广泛的应用场景：** RabbitMQ 广泛应用于微服务架构、异步任务处理、日志聚合、消息通知等领域。
 
-## 什么是 Alauda 流服务 for RabbitMQ？
+## 什么是 Alauda Streaming Service for RabbitMQ？
 
-**Alauda 流服务 for RabbitMQ** 是基于开源社区 [RabbitMQ 集群 Kubernetes 操作员](https://www.rabbitmq.com/kubernetes/operator/operator-overview#cluster-operator) 构建的，具备增强的功能、安全性强化和特性扩展。它扩展了 Kubernetes API，提供声明式配置和自动化运维能力，使用户能够以云原生的方式高效地部署和管理 RabbitMQ 集群，同时确保生产环境的稳定性和可扩展性。
+**Alauda Streaming Service for RabbitMQ** 基于开源社区的 [RabbitMQ 集群 Kubernetes 操作符](https://www.rabbitmq.com/kubernetes/operator/operator-overview#cluster-operator)，增强了功能，提升了安全性，并进行了特性扩展。它扩展了 Kubernetes API，提供声明式配置和自动运维能力，使用户能够以云原生的方式高效部署和管理 RabbitMQ 集群，同时确保生产环境的稳定性和可扩展性。
 
-### 关键特性
+### 主要特性
 
-- **自动化部署：** 使用简单的 Kubernetes 资源定义快速部署高可用的 RabbitMQ 集群。
-- **自动化运维：** 操作员自动处理日常运维任务，如集群扩展、升级和故障恢复。
-- **配置管理：** 操作员集中管理 RabbitMQ 集群配置，确保一致性和可靠性。
-- **监控与告警：** 集成 Prometheus 指标收集；用户可以通过内置的监控仪表板方便地实时监控集群状态和性能指标；实时告警及时通知用户任何实例异常。
-- **与 Kubernetes 生态系统的集成：** 操作员与 Kubernetes 生态系统深度集成，包括 Service、StatefulSet、PersistentVolumeClaim 等，充分利用 Kubernetes 的基础设施能力。
+- **自动化部署：** 通过简单的 Kubernetes 资源定义快速部署高可用的 RabbitMQ 集群。
+- **自动化运维：** 操作符自动处理集群扩展、升级和故障恢复等日常运营任务。
+- **配置管理：** 操作符集中管理 RabbitMQ 集群配置，确保一致性和可靠性。
+- **监控与告警：** 集成 Prometheus 指标收集；用户可以通过内置监控仪表板方便地实时监控集群状态和性能指标；实时告警及时通知用户出现的实例异常。
+- **与 Kubernetes 生态系统的集成：** 操作符与 Kubernetes 生态系统深度集成，包括 Service、StatefulSet、PersistentVolumeClaim 等，充分利用 Kubernetes 的基础设施能力。
 
-## 为什么选择 Alauda 流服务 for RabbitMQ？
+## 为什么选择 Alauda Streaming Service for RabbitMQ？
 
-作为一种成熟的消息中间件，RabbitMQ 因其灵活性、可靠性和可扩展性，成为企业应用的首选。Alauda 流服务 for RabbitMQ 通过实现与 Kubernetes 的原生集成，进一步降低了在云原生环境中管理 RabbitMQ 集群的复杂性，达成自动化运维和高可用性。这两者的结合为从消息传递到集群管理的分布式系统提供了完整的解决方案。
+作为一种成熟的消息中间件，RabbitMQ 凭借其灵活性、可靠性和可扩展性，成为企业应用的首选。Alauda Streaming Service for RabbitMQ 通过原生 Kubernetes 集成，实现自动化运维和高可用性，从而进一步降低了在云原生环境中管理 RabbitMQ 集群的复杂性。两者结合为从消息传递到集群管理的分布式系统提供了完整的解决方案。
