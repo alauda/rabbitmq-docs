@@ -1,0 +1,58 @@
+---
+weight: 20
+sourceSHA: dc18a9b398a1618455eda275d732dd0e7b1906bac99294e6a0ea6d4ddbae069b
+---
+
+# Управление пользователями
+
+## Имя пользователя и пароль
+
+<Directive type="info" title="Примечание">
+  **Внимание**: У пользователя по умолчанию **guest** в RabbitMQ известен публичный пароль. Для обеспечения безопасности среды этот пользователь был отключен на платформе. Для доступа к экземпляру можно использовать случайно сгенерированного пользователя, предоставленного платформой.
+</Directive>
+
+При создании экземпляра будет сгенерирована случайная учетная запись администратора, а информация об учетной записи будет храниться в секретном ресурсе с именем `<Имя экземпляра>-default-user`. Например:
+
+```yaml
+apiVersion: v1
+data:
+  default_user.conf: ZGVmYXVsdF91c2VyPWFkbWluCmRlZmF1bHRfcGFzcz1hZG1pbjEyM18=
+  password: YWRtaW4xMjNf
+  provider: cmFiYml0bXE=
+  type: cmFiYml0bXE=
+  username: YWRtaW4=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: rabbitmq
+    app.kubernetes.io/name: rrrr
+    app.kubernetes.io/part-of: rabbitmq
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+  name: rrrr-default-user
+type: Opaque
+```
+
+Здесь `username` соответствует имени пользователя по умолчанию для доступа к RabbitMQ, а `password` соответствует паролю пользователя по умолчанию.
+
+<Directive type="warning" title="Предупреждение">
+  Этот секрет только для чтения и не может быть обновлен напрямую для изменения пароля. В противном случае это может вызвать неправильную работу экземпляра.
+</Directive>
+
+<Tabs>
+  <Tab label="CLI">
+    Используйте следующие команды для непосредственного извлечения имени пользователя и пароля пользователя по умолчанию.
+
+    ```bash
+    # Получить имя пользователя
+    $ kubectl -n <namespace> get secret <instance name>-default-user -o jsonpath='{.data.username}' | base64 -d
+
+    # Получить пароль
+    $ kubectl -n <namespace> get secret <instance name>-default-user -o jsonpath='{.data.password}' | base64 -d
+    ```
+  </Tab>
+
+  <Tab label="Веб-консоль">
+    На странице деталей экземпляра нажмите на словарь секретов, чтобы просмотреть имя пользователя и пароль в **Alauda Container Platform**.
+  </Tab>
+</Tabs>
