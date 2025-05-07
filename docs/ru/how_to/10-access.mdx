@@ -1,0 +1,144 @@
+---
+weight: 10
+sourceSHA: 21330aa2963de4fb1c424edce125181b1eff3262effbe8d3703d27eafaf9318a
+---
+
+# Подключение клиента
+
+Существует несколько методов подключения бизнес-приложений для доступа к экземплярам RabbitMQ. В этом разделе описывается, как получить доступ к экземплярам RabbitMQ с использованием `Java` и `Python`.
+
+## Применимые сценарии
+
+| Метод доступа              | Применимый сценарий                                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Доступ внутри кластера**  | Приложения внутри кластера получают доступ к экземплярам RabbitMQ через порты, открытые SVC.                                                                |
+| **Доступ извне кластера** | Приложения вне кластера получают доступ к экземплярам RabbitMQ через порты NodePort.<br />Получите доступ к панели управления через соответствующий порт экземпляра. |
+
+## Подключение к RabbitMQ
+
+Предварительные условия
+
+1. Обратитесь к [Методы доступа](../functions/40-accessmethod), чтобы получить конкретный адрес доступа.
+2. Обратитесь к [Управление пользователями](../functions/20-user), чтобы получить имя пользователя и пароль для экземпляра.
+
+<Directive type="tip" title="Совет">
+  Убедитесь, что вы заменили `<username>` и `<password>` в коде на фактические учетные данные для экземпляра.
+
+  Убедитесь, что вы заменили `<ip>` и `<port>` в коде на фактический адрес доступа к экземпляру. В случае доступа извне кластера может быть несколько адресов доступа; вы можете указать их все для повышения надежности соединения.
+</Directive>
+
+<Tabs>
+  <Tab label="Java">
+    Пример доступа из Java выглядит следующим образом:
+
+    ```java
+    import com.rabbitmq.client.*;
+
+    import java.io.IOException;
+    import java.nio.charset.StandardCharsets;
+    import java.util.concurrent.TimeoutException;
+    import java.util.HashMap;
+    import java.util.UUID;
+
+    public class ProducerTest {
+        public static void main(String[] args) throws Exception {
+            Address[] addresses = {
+                new Address(<ip 1>,<port 1>),
+                new Address(<ip 2>,<port 2>),
+                new Address(<ip 3>,<port 3>)
+            };
+            String username = "<username>";
+            String password = "<password>";
+            String vhostName = "/";
+            String exchangeName = "testExchange";
+            String exchangeType = "direct";
+            String queueName = "test";
+
+            ConnectionFactory factory = new ConnectionFactory();
+
+            factory.setUsername(username);
+
+            factory.setPassword(password);
+
+            factory.setAutomaticRecoveryEnabled(true);
+            factory.setNetworkRecoveryInterval(5000);
+
+            factory.setVirtualHost(vhostName);
+
+            factory.setConnectionTimeout(30 * 1000);
+            factory.setHandshakeTimeout(30 * 1000);
+            factory.setShutdownTimeout(0);
+
+            Connection connection = factory.newConnection(addresses);
+            Channel channel = connection.createChannel();
+            channel.exchangeDeclare(exchangeName, exchangeType, true, false, false, null);
+            channel.queueDeclare(queueName, true, false, false, new HashMap<String, Object>());
+            channel.queueBind(queueName, exchangeName, "BindingKeyTest");
+
+            for (int i = 0; i < 100; i++  ) {
+                    String message = "Hello World!"+ i;
+                    channel.basicPublish(exchangeName, "BindingKeyTest", MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+                    System.out.println(" [x] Отправлено '" + message + "'");
+            }
+            channel.close();
+            connection.close();
+        }
+    }
+    ```
+
+    Для получения дополнительных примеров на Java, пожалуйста, обратитесь к [Руководству по API клиента Java](https://www.rabbitmq.com/client-libraries/java-api-guide).
+  </Tab>
+
+  <Tab label="Python">
+    Пример доступа из Python выглядит следующим образом:
+
+    ```go
+    import pika
+    import random
+
+    def on_message(channel, method_frame, header_frame, body):
+        print(method_frame.delivery_tag)
+        print(body)
+        print()
+        channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+
+    credentials = pika.PlainCredentials('<username>','<password>')
+    node1 = pika.ConnectionParameters(<ip 1>, <port 1>, '/', credentials)
+    node2 = pika.ConnectionParameters(<ip 2>, <port 2>, '/', credentials)
+    node3 = pika.ConnectionParameters(<ip 3>, <port 3>, '/', credentials)
+    all_endpoints = [node1,node2,node3]
+
+    while(True):
+        try:
+            print("Подключение...")
+
+            random.shuffle(all_endpoints)
+            connection = pika.BlockingConnection(all_endpoints)
+            channel = connection.channel()
+            channel.basic_qos(prefetch_count=1)
+
+            channel.queue_declare('recovery-example', durable = False, auto_delete = True)
+            channel.basic_consume('recovery-example', on_message)
+            try:
+                channel.start_consuming()
+            except KeyboardInterrupt:
+                channel.stop_consuming()
+                connection.close()
+                break
+        except pika.exceptions.ConnectionClosedByBroker:
+            continue
+
+        except pika.exceptions.AMQPChannelError as err:
+            print("Поймано ошибку канала: {}, остановка...".format(err))
+            break
+
+        except pika.exceptions.AMQPConnectionError:
+            print("Соединение было закрыто, повторная попытка...")
+            continue
+    ```
+
+    Для получения дополнительных примеров на `pika`, пожалуйста, обратитесь к [репозиторию pika на GitHub](https://github.com/pika/pika/tree/main/examples).
+  </Tab>
+</Tabs>
+
+Для использования других клиентов, пожалуйста, обратитесь к [Учебникам RabbitMQ](https://www.rabbitmq.com/tutorials).
