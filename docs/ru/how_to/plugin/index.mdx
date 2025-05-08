@@ -1,0 +1,252 @@
+---
+weight: 60
+i18n:
+  title:
+    en: Plugin
+    ru: Плагин
+title: Плагин
+sourceSHA: 09a0c8de1eb239d0b6055335604bdfcc867d0bd4d0206f5fd6d662c03317f7ff
+---
+
+# Поддержка плагинов
+
+## Механизм плагинов
+
+RabbitMQ поддерживает плагины, которые расширяют функциональность различными способами: поддержка большего количества протоколов, мониторинг состояния системы, дополнительные типы обмена AMQP 0-9-1, федерация узлов и т. д. Многие функции реализованы в виде плагинов и предоставляются вместе с основными релизами.
+
+Для получения дополнительной информации воспользуйтесь: [Как использовать плагины RabbitMQ](https://www.rabbitmq.com/docs/plugins#overview).
+
+## Инструкции по эксплуатации
+
+### Просмотр поддерживаемых плагинов в экземпляре
+
+Выберите любой узел экземпляра RabbitMQ, войдите в Pod и выполните следующую команду, чтобы просмотреть поддерживаемый и включенный статус плагинов:
+
+```
+rabbitmq-plugins list
+```
+
+По умолчанию плагины `rabbitmq_peer_discovery_k8s`, `rabbitmq_prometheus`, `rabbitmq_management` и их родственные плагины включены при создании экземпляра.
+
+Ниже представлен список плагинов, включенных в образ, вместе с их описаниями:
+
+| Имя плагина                              | Описание                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **rabbitmq\_amqp1\_0**                   | Плагин для поддержки протокола AMQP 1.0, который позволяет клиентам AMQP 1.0 подключаться к RabbitMQ                                                                                                                                                                                                               |
+| **rabbitmq\_auth\_backend\_cache**       | Плагин для кэширования результатов аутентификации, он может улучшить производительность аутентификации RabbitMQ и снизить количество запросов к службам аутентификации в бекенде                                                                                                                                                        |
+| **rabbitmq\_auth\_backend\_http**        | Плагин для поддержки HTTP-аутентификации, он позволяет проверять пользователей RabbitMQ через HTTP-сервис                                                                                                                                                                                                        |
+| **rabbitmq\_auth\_backend\_ldap**        | Плагин для поддержки аутентификации LDAP, он позволяет проверять пользователей RabbitMQ через LDAP-сервис                                                                                                                                                                                                        |
+| **rabbitmq\_auth\_backend\_oauth2**      | Плагин для поддержки аутентификации OAuth 2.0, он позволяет проверять пользователей RabbitMQ через сервис OAuth 2.0                                                                                                                                                                                              |
+| **rabbitmq\_auth\_mechanism\_ssl**       | Плагин для поддержки аутентификации SSL, он позволяет проверять пользователей RabbitMQ с использованием SSL-сертификатов                                                                                                                                                                                                      |
+| **rabbitmq\_consistent\_hash\_exchange** | Плагин для реализации согласованного хеширования, он позволяет создавать специальный обмен, который вычисляет хеш-значения на основе ключей маршрутизации сообщений или заголовков, а затем отправляет сообщения в соответствующие очереди                                                                                                |
+| **rabbitmq\_delayed\_message\_exchange** | Плагин для задерживаемой передачи сообщений, он позволяет создавать специальный обмен, который устанавливает задержку на основе заголовков сообщений, временно храня сообщения в памяти или на диске до истечения задержки, а затем отправляет сообщения в соответствующие очереди                                                       |
+| **rabbitmq\_event\_exchange**            | Плагин для публикации событий RabbitMQ, он позволяет создавать специальный обмен, который отправляет различные события RabbitMQ, такие как создание, удаление и изменение соединений, каналов, очередей, пользователей, разрешений и т. д., в соответствующие очереди, поддерживая несколько типов событий и возможностей фильтрации |
+| **rabbitmq\_federation**                 | Плагин для подключения нескольких экземпляров RabbitMQ, он позволяет создавать федерации, которые пересылают сообщения от одного экземпляра RabbitMQ к другому                                                                                                                                                            |
+| **rabbitmq\_federation\_management**     | Плагин для управления федерацией RabbitMQ, который позволяет вам просматривать и настраивать федерации RabbitMQ через веб-интерфейс                                                                                                                                                                                       |
+| **rabbitmq\_jms\_topic\_exchange**       | Плагин для поддержки тем JMS, он позволяет создавать специальный обмен, который маршрутизирует сообщения на основе заголовка JMSDestination сообщений                                                                                                                                                          |
+| **rabbitmq\_management**                 | Плагин для управления и мониторинга RabbitMQ, он предоставляет веб-интерфейс, который позволяет вам просматривать статус, конфигурацию, статистику и логи RabbitMQ, а также выполнять некоторые операции                                                                                                              |
+| **rabbitmq\_management\_agent**          | Плагин для поддержки управления RabbitMQ, он предоставляет агента, который сообщает о различной информации, такой как использование памяти, диска, подключений, каналов, очередей и т. д., от узлов RabbitMQ плагину управления и позволяет плагину управления отправлять различные команды узлам RabbitMQ           |
+| **rabbitmq\_mqtt**                       | Плагин для поддержки протокола MQTT, он позволяет клиентам MQTT подключаться к RabbitMQ, поддерживая различные функции, такие как QoS, сохраненные сообщения, сообщения последней воли, фильтрацию тем и т. д.                                                                                                                 |
+| **rabbitmq\_peer\_discovery\_aws**       | Плагин для поддержки обнаружения узлов AWS, он может автоматически обнаруживать и присоединяться к кластерам RabbitMQ в средах AWS, поддерживая различные службы AWS                                                                                                                                                       |
+| **rabbitmq\_peer\_discovery\_common**    | Плагин для поддержки общего обнаружения узлов, он предоставляет некоторые основные функции, такие как регистрация узлов, отмена регистрации, запрос и т. д., и может быть использован другими плагинами обнаружения узлов                                                                                                               |
+| **rabbitmq\_peer\_discovery\_consul**    | Плагин для поддержки обнаружения узлов Consul, он может автоматически обнаруживать и присоединяться к кластерам RabbitMQ в средах Consul                                                                                                                                                                                  |
+| **rabbitmq\_peer\_discovery\_etcd**      | Плагин для поддержки обнаружения узлов etcd, он может автоматически обнаруживать и присоединяться к кластерам RabbitMQ в средах etcd                                                                                                                                                                                      |
+| **rabbitmq\_peer\_discovery\_k8s**       | Плагин для поддержки обнаружения узлов Kubernetes; он позволяет вам автоматически обнаруживать и присоединяться к кластерам RabbitMQ в средах Kubernetes                                                                                                                                                                |
+| **rabbitmq\_prometheus**                 | Плагин для поддержки мониторинга Prometheus; он позволяет вам собирать и отображать различные метрики RabbitMQ с помощью Prometheus                                                                                                                                                                                   |
+| **rabbitmq\_random\_exchange**           | Плагин для реализации случайной маршрутизации, он позволяет вам создавать специальный обмен, который случайным образом отправляет сообщения в одну или несколько очередей                                                                                                                                                                         |
+| **rabbitmq\_recent\_history\_exchange**  | Плагин для реализации маршрутизации по недавней истории, он позволяет создавать специальный обмен, который отправляет сообщения в одну или несколько очередей, которые недавно получили сообщения                                                                                                                                     |
+| **rabbitmq\_sharding**                   | Плагин для реализации шардирования, он позволяет вам создавать специальную очередь, которая распределяет сообщения по нескольким подсерверам                                                                                                                                                                                |
+| **rabbitmq\_shovel**                     | Плагин для пересылки сообщений, он позволяет вам определять правила для пересылки сообщений из одной очереди или обмена в другой                                                                                                                                                                                       |
+| **rabbitmq\_shovel\_management**         | Плагин для управления RabbitMQ shovel, он позволяет вам просматривать и настраивать RabbitMQ shovel через веб-интерфейс                                                                                                                                                                                                  |
+| **rabbitmq\_stomp**                      | Плагин для поддержки протокола STOMP, он позволяет вам подключаться к RabbitMQ с использованием клиентов STOMP, поддерживая различные функции                                                                                                                                                                               |
+| **rabbitmq\_stream**                     | Плагин для поддержки потоковых протоколов, он позволяет вам создавать специальную очередь для хранения и передачи больших объемов упорядоченных сообщений                                                                                                                                                                |
+| **rabbitmq\_stream\_management**         | Плагин для управления потоками RabbitMQ, он позволяет вам просматривать и настраивать потоки RabbitMQ через веб-интерфейс                                                                                                                                                                                                |
+| **rabbitmq\_top**                        | Плагин для просмотра производительности RabbitMQ, он предоставляет интерфейс командной строки, который позволяет вам просматривать использование различных ресурсов RabbitMQ                                                                                                                                                                 |
+| **rabbitmq\_tracing**                    | Плагин для трассировки сообщений RabbitMQ, он может создавать трассировки, которые записывают содержимое и свойства сообщений RabbitMQ в файлы или логи                                                                                                                                                                       |
+| **rabbitmq\_trust\_store**               | Плагин для управления хранилищем доверия RabbitMQ, он позволяет вам хранить и обновлять SSL-сертификаты в RabbitMQ                                                                                                                                                                                                    |
+| **rabbitmq\_web\_dispatch**              | Плагин для поддержки веб-сервисов RabbitMQ, он предоставляет фреймворк для определения и обработки HTTP-запросов в RabbitMQ                                                                                                                                                                                |
+| **rabbitmq\_web\_mqtt**                  | Плагин для поддержки MQTT через WebSockets, он позволяет вам подключаться к RabbitMQ с использованием клиентов WebSocket                                                                                                                                                                                                      |
+| **rabbitmq\_web\_mqtt\_examples**        | Плагин для демонстрации MQTT через WebSockets, предоставляющий несколько примеров                                                                                                                                                                                                                                     |
+| **rabbitmq\_web\_stomp**                 | Плагин для поддержки STOMP через WebSockets, он позволяет вам подключаться к RabbitMQ с использованием клиентов WebSocket                                                                                                                                                                                                     |
+| **rabbitmq\_web\_stomp\_examples**       | Плагин для демонстрации STOMP через WebSockets, предоставляющий несколько примеров                                                                                                                                                                                                                                    |
+
+### Включение/выключение плагинов, уже включенных в образ
+
+Когда вам нужно включить или отключить плагины, уже включенные в образ, вы можете обновить соответствующие поля в YAML-файле экземпляра. Для примера возьмем `rabbitmq_shovel`:
+
+```yaml
+additionalPlugins:
+- rabbitmq_top
+- rabbitmq_shovel
+```
+
+### Включение сторонних или кастомных плагинов
+
+Когда вам нужно включить кастомные плагины или плагины сообщества, которые не включены в образ, вы не можете напрямую активировать их, редактируя additionalPlugins в YAML. Вместо этого вам необходимо загрузить их в контейнер перед запуском pod.
+
+#### Метод 1: Среда имеет доступ к Интернету
+
+1. Обновите поле spec.override, добавив конфигурацию sts, загрузив плагин в initContainer.
+2. Обновите поле spec.rabbitmq.envConfig, добавив переменные среды для настройки пути плагина.
+3. Обновите поле spec.rabbitmq.additionalPlugins, чтобы включить плагин.
+4. После того как экземпляр будет готов, используйте команду `rabbitmq-plugins list`, чтобы проверить, включен ли плагин.
+
+Ниже приведен пример YAML:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: test
+  labels:
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+spec:
+  version: 3.12.4
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: NodePort
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: test
+          topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_management_exchange
+    envConfig: |
+      RABBITMQ_PLUGINS_DIR=/opt/rabbitmq/plugins:/opt/rabbitmq/community-plugins
+  override:
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rabbitmq
+                volumeMounts:
+                  - mountPath: /opt/rabbitmq/community-plugins
+                    name: community-plugins
+            volumes:
+              - name: community-plugins
+                emptyDir: {}
+            initContainers:
+              - command:
+                  - sh
+                  - -c
+                  - curl -L -v https://github.com/rabbitmq/rabbitmq-management-exchange/releases/download/v3.12.0/rabbitmq_management_exchange-3.12.0.ez --output /community-plugins/rabbitmq_management_exchange-3.12.0.ez
+                image: curlimages/curl  # или другой образ с командой curl
+                imagePullPolicy: IfNotPresent
+                name: copy-community-plugins
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 500Mi
+                  requests:
+                    cpu: 100m
+                    memory: 500Mi
+                terminationMessagePolicy: FallbackToLogsOnError
+                volumeMounts:
+                  - mountPath: /community-plugins/
+                    name: community-plugins
+  persistence:
+    storageClassName: aaaaaa
+    storage: 1Gi
+```
+
+#### Метод 2: Среда не может получить доступ к Интернету
+
+1. Обновите поле spec.override, добавив конфигурацию sts, подключив плагин к контейнеру через hostPath. Убедитесь, что папка на узле, где запланирован экземпляр, существует (в этом примере /root/yh/community-plugins) и что плагин помещен туда.
+2. Обновите поле spec.rabbitmq.envConfig, добавив переменные среды для настройки пути плагина.
+3. Обновите поле spec.rabbitmq.additionalPlugins, чтобы включить плагин.
+4. После того как экземпляр будет готов, используйте команду `rabbitmq-plugins list`, чтобы проверить, включен ли плагин.
+
+Ниже приведен пример YAML:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: test
+  labels:
+    prometheus.io/port: "15692"
+    prometheus.io/scrape: "true"
+spec:
+  version: 3.12.4
+  replicas: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  service:
+    type: NodePort
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: test
+          topologyKey: kubernetes.io/hostname
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_management_exchange
+    envConfig: |
+      RABBITMQ_PLUGINS_DIR=/opt/rabbitmq/plugins:/opt/rabbitmq/community-plugins
+  override:
+    statefulSet:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rabbitmq
+                resources: {}
+                volumeMounts:
+                  - mountPath: /opt/rabbitmq/community-plugins
+                    name: community-plugins
+            initContainers:
+              - command:
+                  - sh
+                  - -c
+                  - cp -r /temp-plugins/* /community-plugins/ && chown 999:999
+                    /community-plugins/* && chmod 755 /community-plugins/*
+                image: registry.alauda.cn:60080/middleware/rabbitmq/rabbitmq3124-management:v3.15.0 # Можно также использовать другие образы
+                name: copy-community-plugins
+                resources: {}
+                securityContext:
+                  privileged: true
+                  runAsGroup: 0
+                  runAsUser: 0
+                volumeMounts:
+                  - mountPath: /community-plugins/
+                    name: community-plugins
+                  - mountPath: /temp-plugins/
+                    mountPropagation: Bidirectional
+                    name: temp-plugins
+            volumes:
+              - emptyDir: {}
+                name: community-plugins
+              - hostPath:
+                  path: /root/yh/community-plugins # Директория плагинов на хосте
+                  type: Directory
+                name: temp-plugins
+  persistence:
+    storageClassName: aaaaaa
+    storage: 1Gi
+```
+
+## Инструкции по влиянию обновления
+
+- Когда вашему экземпляру требуется обновление, убедитесь, что соответствующие плагины включены как в конфигурациях экземпляра перед обновлением, так и после обновления, чтобы гарантировать функциональность.
+- Если в сообществе есть устаревшие плагины, вам следует своевременно их отключить.
+- При включении кастомных или сторонних плагинов убедитесь в совместимости между версиями.
