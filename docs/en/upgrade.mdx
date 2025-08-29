@@ -11,10 +11,7 @@ i18n:
 This document provides the upgrade path principles and supported version compatibility for Alauda Streaming Service for RabbitMQ.
 :::
 
-
-## Upgrade Paths
-
-### Supported Versions
+## Compatibility Matrix
 
 The table below lists supported versions of the Alauda Streaming Service for RabbitMQ :
 
@@ -22,10 +19,6 @@ The table below lists supported versions of the Alauda Streaming Service for Rab
 |:-----------------------:|:-------------------:|:-------------------:|
 | v4.1.x                  |  3.8.16, 3.12.x     | 1.25+               |
 | v4.0.x                  |  3.8.16, 3.12.x     | 1.25+               |
-
-:::tip Note
-Some RabbitMQ versions may require specific feature flags to be enabled. Please refer to the release notes for version-specific instructions.
-:::
 
 ## Prerequisites
 
@@ -35,6 +28,11 @@ Before initiating an upgrade, please ensure the following:
 2. **Component Health**: RabbitMQ clusters are in a `Ready` state and all pods are healthy.
 3. **Resource Availability**: The cluster has sufficient resources to support the upgrade process.
 
+:::tip Note
+Some RabbitMQ versions may require specific feature flags to be enabled. Please refer to the release notes for version-specific instructions.
+:::
+
+For version-specific changes, new features, and deprecations, see the 📝 **[Release Notes](./release_notes.mdx)**.
 
 ## Upgrade Path Guidelines
 
@@ -43,17 +41,13 @@ Before initiating an upgrade, please ensure the following:
 - **Example**: `4.1.x → 4.2.x`
 
 ### Patch-Level Upgrade
-- **Description**: Patch upgrades within the same minor version are fully compatible.
+- **Description**: Upgrades between any patch versions within the same minor version are fully compatible and can be performed directly.
 - **Example**: `4.1.0 → 4.1.x`
 
 ### RabbitMQ Version Alignment
 - **Description**: Ensure RabbitMQ version upgrades follow the operator's compatibility matrix.
 
-## Upgrade Process Reference
-- 📝 **[Release Notes](./release_notes.mdx)**: Version-specific changes, new features, and deprecations
-
-
-## Upgrade Alauda Streaming Service for RabbitMQ
+## Upgrade strategy
 
 Alauda Streaming Service for RabbitMQ will execute upgrades based on the configured upgrade strategy:
 
