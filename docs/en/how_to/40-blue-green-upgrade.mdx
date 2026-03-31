@@ -13,108 +13,14 @@ RabbitMQ 3.12.x cannot be directly upgraded to 4.2.x through an in-place upgrade
 
 ## Option 1: Drain & Migrate (Acceptable Downtime)
 
-This approach involves draining all messages from the old instance, exporting its definitions, and importing them into a new 4.2.x instance.
+This approach involves a brief service interruption. If your business can tolerate downtime, this is the most straightforward approach:
 
-### Prerequisites
-
-- The old RabbitMQ 3.12.x instance (referred to as **blue**) is healthy and in `Active` state.
-- All consumers can be temporarily stopped.
-
-### Procedure
-
-<Tabs>
-  <Tab label="CLI">
-    **Step 1: Drain all messages on the blue cluster**
-
-    Stop all producers first. Then wait for consumers to finish processing all messages. Verify that all queues are empty:
-
-    ```bash
-    # List all queues and their message counts
-    kubectl exec -n <namespace> <blue-pod-0> -- rabbitmqctl list_queues name messages
-    ```
-
-    All queues should show `0` messages before proceeding.
-
-    **Step 2: Export definitions from the blue cluster**
-
-    ```bash
-    # Export definitions (exchanges, queues, bindings, users, vhosts, policies, etc.)
-    kubectl exec -n <namespace> <blue-pod-0> -- \
-      rabbitmqctl export_definitions /tmp/definitions.json
-
-    # Copy the definitions file to local
-    kubectl cp <namespace>/<blue-pod-0>:/tmp/definitions.json ./definitions.json
-    ```
-
-    **Step 3: Create a new 4.2.x instance (green cluster)**
-
-    ```bash
-    cat << 'EOF' | kubectl -n <namespace> create -f -
-    apiVersion: rabbitmq.com/v1beta1
-    kind: RabbitmqCluster
-    metadata:
-      name: <green-instance-name>
-    spec:
-      replicas: 3
-      version: "4.2"
-      resources:
-        limits:
-          cpu: 1
-          memory: 2Gi
-        requests:
-          cpu: 1
-          memory: 2Gi
-      persistence:
-        storage: 1Gi
-        storageClassName: <storage-class>
-      service:
-        type: ClusterIP
-      rabbitmq:
-        additionalConfig: |-
-          channel_max=1000
-          vm_memory_high_watermark.relative=0.4
-    EOF
-    ```
-
-    Wait for the green instance to become `Active`:
-
-    ```bash
-    kubectl -n <namespace> get rabbitmqclusters <green-instance-name> -w
-    ```
-
-    **Step 4: Import definitions into the green cluster**
-
-    ```bash
-    # Copy definitions file to the green pod
-    kubectl cp ./definitions.json <namespace>/<green-pod-0>:/tmp/definitions.json
-
-    # Import definitions
-    kubectl exec -n <namespace> <green-pod-0> -- \
-      rabbitmqctl import_definitions /tmp/definitions.json
-    ```
-
-    **Step 5: Switch application connections to the green cluster**
-
-    Update your producer and consumer application configurations to point to the new green cluster's service address:
-
-    ```bash
-    # Get the green cluster's service address
-    kubectl -n <namespace> get svc -l app.kubernetes.io/name=<green-instance-name>
-    ```
-
-    **Step 6: Verify and decommission the blue cluster**
-
-    After confirming all applications are producing and consuming messages normally on the green cluster:
-
-    ```bash
-    # Verify messages are flowing on the green cluster
-    kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_queues name messages consumers
-
-    # Delete the old blue cluster when ready
-    kubectl -n <namespace> delete rabbitmqcluster <blue-instance-name>
-    ```
-  </Tab>
-</Tabs>
+1. **Drain Messages:** Stop all producers and wait for consumers to process all remaining messages. Ensure all queues are empty.
+2. **Export Definitions:** Export the definitions (exchanges, queues, bindings, users, vhosts) from the old 3.12.x instance.
+3. **Create New Instance:** Deploy a new RabbitMQ 4.2.x instance.
+4. **Import Definitions:** Import the definitions into the new 4.2.x instance.
+5. **Switch Traffic:** Update your application configurations to connect to the new instance and restart them.
+6. **Decommission:** Once everything is confirmed working, delete the old 3.12.x instance.
 
 ---
 
@@ -174,7 +80,24 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
           - rabbitmq_federation_management
         additionalConfig: |-
           channel_max=1000
+          cluster_keepalive_interval=10000
+          collect_statistics=none
+          collect_statistics_interval=5000
+          default_vhost=/
+          delegate_count=16
+          disk_free_limit.absolute=50MB
+          handshake_timeout=10000
+          heartbeat=60
+          max_message_size=134217728
+          mirroring_sync_batch_size=4096
+          mnesia_table_loading_retry_limit=10
+          mnesia_table_loading_retry_timeout=30000
+          num_acceptors.tcp=10
+          queue_index_embed_msgs_below=4096
+          raft.wal_max_size_bytes=64000000
+          vm_memory_calculation_strategy=allocated
           vm_memory_high_watermark.relative=0.4
+          vm_memory_high_watermark_paging_ratio=0.5
     EOF
     ```
 
@@ -211,24 +134,7 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
     kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_bindings
     ```
 
-    **Step 3: Enable federation plugin on blue cluster**
-
-    Ensure the federation plugin is enabled on the blue cluster as well:
-
-    ```bash
-    kubectl exec -n <namespace> <blue-pod-0> -- rabbitmq-plugins enable rabbitmq_federation
-    ```
-
-    Or update the blue instance spec to include the plugin:
-
-    ```yaml
-    spec:
-      rabbitmq:
-        additionalPlugins:
-          - rabbitmq_federation
-    ```
-
-    **Step 4: Configure federation upstream on green cluster**
+    **Step 3: Configure federation upstream on green cluster**
 
     Get the blue cluster's internal service address first:
 
@@ -252,6 +158,10 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
     echo "Blue cluster credentials: $BLUE_USER / $BLUE_PASS"
     ```
 
+    <Directive type="info" title="URL Encoding">
+      If your username or password contains special characters (like `@`, `:`, `/`), ensure they are URL-encoded in the connection URI below.
+    </Directive>
+
     Configure the upstream on the **green** cluster pointing to **blue**:
 
     ```bash
@@ -268,6 +178,12 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
       '{"federation-upstream":"blue"}'
     ```
 
+    <Directive type="warning" title="Policy Priority Note">
+      In RabbitMQ, if multiple policies match a queue, only the one with the highest priority is applied. If your imported definitions already contain policies covering your queues, the blanket `blue-federation` policy above might not take effect (or it might overwrite existing rules if given higher priority).
+
+      In such cases, you should manually update the existing policies on the green cluster to include the `"federation-upstream": "blue"` key alongside their current definitions.
+    </Directive>
+
     Verify federation status:
 
     ```bash
@@ -275,7 +191,7 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
       'rabbit_federation_status:status().'
     ```
 
-    **Step 5: Migrate consumers to the green cluster**
+    **Step 4: Migrate consumers to the green cluster**
 
     Update your consumer application configurations to point to the green cluster's service address. At this point:
     - Producers still publish to the **blue** cluster.
@@ -303,7 +219,7 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
       Before migrating consumers off the blue cluster, make sure the federation links on green are in `running` state. If a link is not running, messages will not be transferred.
     </Directive>
 
-    **Step 6: Drain messages from the blue cluster**
+    **Step 5: Drain messages from the blue cluster**
 
     Once all consumers have moved to green, federation will drain remaining messages from blue. Monitor progress:
 
@@ -329,7 +245,7 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
       Using shovel concurrently with federation will transfer messages in parallel, which may result in messages arriving out of order. If message ordering is critical, rely on federation alone.
     </Directive>
 
-    **Step 7: Migrate producers to the green cluster**
+    **Step 6: Migrate producers to the green cluster**
 
     Once the queues on blue are nearly empty:
 
@@ -344,7 +260,7 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
 
     4. Update producer configurations to point to the green cluster and restart them.
 
-    **Step 8: Clean up and decommission the blue cluster**
+    **Step 7: Clean up and decommission the blue cluster**
 
     Remove the federation policy and upstream configuration from green:
 
