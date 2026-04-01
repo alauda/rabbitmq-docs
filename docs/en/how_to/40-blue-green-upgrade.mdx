@@ -80,24 +80,14 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
           - rabbitmq_federation_management
         additionalConfig: |-
           channel_max=1000
-          cluster_keepalive_interval=10000
-          collect_statistics=none
-          collect_statistics_interval=5000
           default_vhost=/
-          delegate_count=16
-          disk_free_limit.absolute=50MB
           handshake_timeout=10000
           heartbeat=60
           max_message_size=134217728
-          mirroring_sync_batch_size=4096
-          mnesia_table_loading_retry_limit=10
-          mnesia_table_loading_retry_timeout=30000
-          num_acceptors.tcp=10
           queue_index_embed_msgs_below=4096
           raft.wal_max_size_bytes=64000000
           vm_memory_calculation_strategy=allocated
           vm_memory_high_watermark.relative=0.4
-          vm_memory_high_watermark_paging_ratio=0.5
     EOF
     ```
 
@@ -294,16 +284,16 @@ Use the following checklist to verify each stage of the migration. Each step inc
 
 | # | Check Item | Command | Expected Result |
 |---|-----------|---------|-----------------|
-| 1 | Green cluster is Active | `kubectl -n <ns> get rabbitmqclusters <green>` | `PHASE: Active` |
-| 2 | Definitions imported | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl list_queues name` | Same queues as blue |
-| 3 | Federation plugin enabled | `kubectl exec -n <ns> <green-pod-0> -- rabbitmq-plugins list -e` | `rabbitmq_federation` listed |
-| 4 | Federation upstream set | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl list_parameters` | `federation-upstream` → `blue` exists |
-| 5 | Federation links running | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl eval 'rabbit_federation_status:status().'` | Status is `running` |
-| 6 | Consumers on green receiving | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl list_queues name messages consumers` | `consumers > 0` |
-| 7 | Blue queues draining | `kubectl exec -n <ns> <blue-pod-0> -- rabbitmqctl list_queues name messages` | Message count decreasing |
+| 1 | Green cluster is Active | `kubectl -n <namespace> get rabbitmqclusters <green-instance-name>` | `PHASE: Active` |
+| 2 | Definitions imported | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_queues name` | Same queues as blue |
+| 3 | Federation plugin enabled | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmq-plugins list -e` | `rabbitmq_federation` listed |
+| 4 | Federation upstream set | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_parameters` | `federation-upstream` → `blue` exists |
+| 5 | Federation links running | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl eval 'rabbit_federation_status:status().'` | Status is `running` |
+| 6 | Consumers on green receiving | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_queues name messages consumers` | `consumers > 0` |
+| 7 | Blue queues draining | `kubectl exec -n <namespace> <blue-pod-0> -- rabbitmqctl list_queues name messages` | Message count decreasing |
 | 8 | Blue queues empty | Same as above | All queues show `0` |
-| 9 | Producers on green | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl list_queues name messages` | Messages increasing |
-| 10 | Federation cleaned up | `kubectl exec -n <ns> <green-pod-0> -- rabbitmqctl list_parameters` | No federation parameters |
+| 9 | Producers on green | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_queues name messages` | Messages increasing |
+| 10 | Federation cleaned up | `kubectl exec -n <namespace> <green-pod-0> -- rabbitmqctl list_parameters` | No federation parameters |
 
 ## Rollback
 
