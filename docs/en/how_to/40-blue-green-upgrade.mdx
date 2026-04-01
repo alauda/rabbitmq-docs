@@ -198,6 +198,8 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
     - Consumers read from the **green** cluster.
     - Federation automatically pulls messages from blue to green.
 
+    You can get the green cluster's service address using the following command:
+
     ```bash
     # Get the green cluster's service address
     kubectl -n <namespace> get svc -l app.kubernetes.io/name=<green-instance-name>
@@ -253,10 +255,10 @@ This approach uses the [RabbitMQ Federation plugin](https://www.rabbitmq.com/doc
     2. Wait for the remaining messages to be fully drained via federation.
     3. Verify all queues on blue are empty:
 
-    ```bash
-    kubectl exec -n <namespace> <blue-pod-0> -- \
-      rabbitmqctl list_queues name messages
-    ```
+       ```bash
+       kubectl exec -n <namespace> <blue-pod-0> -- \
+         rabbitmqctl list_queues name messages
+       ```
 
     4. Update producer configurations to point to the green cluster and restart them.
 
