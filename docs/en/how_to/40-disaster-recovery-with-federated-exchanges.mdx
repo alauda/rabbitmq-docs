@@ -1,0 +1,530 @@
+---
+weight: 40
+i18n:
+  title:
+    zh: 使用 Federation Exchange 实现灾备
+---
+
+# RabbitMQ Disaster Recovery with Federated Exchanges
+
+This article describes a disaster recovery (DR) pattern for RabbitMQ that uses federated exchanges. In this pattern, a primary RabbitMQ instance or cluster publishes business messages to an upstream exchange, and a standby DR RabbitMQ instance or cluster uses a downstream exchange that federates from the upstream exchange.
+
+Federated exchanges provide cross-cluster, asynchronous message replication for selected message flows. They are suitable for warm-standby designs, regional distribution, and selective replication. They are not a synchronous high-availability mechanism and they do not replace application failover, regular backups, RabbitMQ definitions management, or durable queue design.
+
+## Applicable Scenarios
+
+Use federated exchanges when you need one or more of the following:
+
+- Keep a remote RabbitMQ cluster warm with a reasonably recent copy of selected message flows.
+- Replicate only a subset of exchanges instead of the full cluster state.
+- Tolerate temporary WAN or inter-cluster connectivity failures and allow links to reconnect automatically.
+- Prepare a standby site that can receive messages after applications switch producers and consumers to the DR environment.
+
+Federated exchanges are usually not the right solution when you need one or more of the following:
+
+- Strict `RPO=0` guarantees.
+- Synchronous zero-loss replication across clusters.
+- Automatic application-side producer or consumer failover.
+- Automatic synchronization of RabbitMQ users, permissions, exchanges, queues, bindings, policies, TLS materials, Kubernetes resources, or application configuration.
+- Replacement for backup, restore, or durable storage planning.
+
+## How the DR Pattern Works
+
+In this example:
+
+- `rabbitmq-primary` hosts the upstream exchange `app.events`.
+- `rabbitmq-dr` hosts the downstream exchange `app-events-dr`.
+- A federation link is configured on `rabbitmq-dr`.
+- A policy on `rabbitmq-dr` selects `app-events-dr` as the federated exchange.
+- Bindings on the downstream side determine which messages are requested from the upstream side.
+
+Conceptually, messages published to `app.events` on the primary side are copied to `app-events-dr` on the DR side as though they were published locally to the downstream exchange.
+
+Use the exchange, queue, and binding names that match your application failover plan. The example uses different primary and DR exchange names to make the direction explicit. If applications must use the same exchange or queue names after failover, declare those names on the DR cluster and update the commands consistently.
+
+<Directive type="warning" title="What Federation Does Not Guarantee">
+  Federation links are asynchronous. During a network partition, authentication failure, or upstream outage, messages can lag behind or be unavailable on the DR side until the link reconnects. Do not describe this pattern as synchronous HA or guaranteed zero-loss replication.
+</Directive>
+
+## Prerequisites
+
+Before you configure federated exchanges, make sure that the following conditions are met:
+
+1. You have two reachable RabbitMQ instances or clusters, named `rabbitmq-primary` and `rabbitmq-dr` in this article.
+2. The downstream DR cluster has the `rabbitmq_federation` plugin enabled.
+3. Enable `rabbitmq_federation_management` on the downstream DR cluster only when you want federation pages in the management UI or API.
+4. The upstream primary cluster does not need `rabbitmq_federation` or `rabbitmq_federation_management` for federated exchanges.
+5. You can reach the upstream AMQP listener from the DR side through `<primary-host>:<primary-port>`.
+6. You have management UI or CLI access for both environments.
+7. The upstream user in the federation URI has permission to connect to the required virtual host and access the upstream exchange.
+8. You know the access addresses, credentials, and namespace values that correspond to your environment.
+9. The RabbitMQ definitions required for application failover have been planned for the DR environment.
+
+You should also account for these design requirements:
+
+- Use durable exchanges and durable queues for important message flows.
+- Publish persistent messages when the workload requires recovery after broker restart.
+- Make consumers idempotent because duplicates can still occur during reconnects, topology changes, or multi-path routing.
+- Avoid bidirectional or mesh-style topologies unless you have explicitly designed loop prevention and duplicate handling.
+
+## Enable the Federation Plugins
+
+The plugin requirement for this pattern is on the downstream DR cluster. Enable `rabbitmq_federation` on `rabbitmq-dr`. Enable `rabbitmq_federation_management` on `rabbitmq-dr` only if you want federation pages in the management UI or API. The upstream primary cluster does not need federation plugins.
+
+The following example keeps the primary cluster without federation plugin configuration and enables the plugins on the DR cluster by using `spec.rabbitmq.additionalPlugins`.
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-primary
+  namespace: <namespace>
+spec:
+  replicas: 3
+  ...
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-dr
+  namespace: <namespace>
+spec:
+  replicas: 3
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_federation
+      - rabbitmq_federation_management
+  ...
+```
+
+After the operator rolls out the updated StatefulSet, verify that the plugins are enabled on the DR side:
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmq-plugins list -e
+```
+
+The output should include `rabbitmq_federation`. If you enabled the management plugin, the output should also include `rabbitmq_federation_management`.
+
+## Prepare RabbitMQ Definitions for DR Readiness
+
+Federation moves selected messages between exchanges. It does not synchronize application topology, security definitions, or platform resources. Before a DR switchover, the DR cluster must already contain the virtual hosts, exchanges, queues, bindings, users, permissions, policies, parameters, TLS materials, Kubernetes `Secret` objects, and application configuration that the workload needs.
+
+Use one of the following approaches:
+
+- If RabbitMQ definitions are managed by GitOps, application bootstrap code, or another declarative process, apply the same intended definitions to the DR cluster and verify them there.
+- If the primary topology already exists and is not managed declaratively, export definitions from the primary cluster and import the reviewed definitions into the DR cluster.
+
+Definitions export and import is a point-in-time operation. The scope depends on whether you run a cluster-wide export or a single-vhost export:
+
+- Use a cluster-wide export when the DR cluster must be seeded with virtual hosts, users, permissions, exchanges, queues, bindings, runtime parameters, and policies.
+- Use a single-vhost export only when the target virtual host, users, and permissions are already prepared on the DR cluster and you only need to move topology for that virtual host. In RabbitMQ 3.8.16, a `rabbitmqadmin --vhost / export ...` file contains vhost-scoped topology keys such as `exchanges`, `queues`, `bindings`, `parameters`, and `policies`, but it does not include `users`, `permissions`, or `vhosts`.
+
+Definitions export and import does not copy queue contents, durable message stores, stream data, Kubernetes resources, TLS key material stored outside RabbitMQ, or application configuration.
+
+For DR readiness, export cluster-wide definitions from the primary cluster unless you intentionally want a single-vhost topology file:
+
+```bash
+rabbitmqadmin \
+  --host <primary-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  export primary-definitions.json
+```
+
+Review `primary-definitions.json` before importing it. Remove or adjust definitions that are specific to the primary site, such as upstream URIs, shovel parameters, policies that should not apply to DR, test users, or topology that intentionally differs between sites. Treat the file as sensitive because it can contain user password hashes and operational configuration.
+
+Import the reviewed cluster-wide definitions into the DR cluster:
+
+```bash
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  import primary-definitions.json
+```
+
+If you only need to move topology for a virtual host that already exists on the DR cluster, include `--vhost <vhost>` on both export and import commands:
+
+```bash
+rabbitmqadmin \
+  --host <primary-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  export primary-vhost-topology.json
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  import primary-vhost-topology.json
+```
+
+Verify the definitions that applications require after failover:
+
+```bash
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  list exchanges name type durable
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  list queues name durable policy arguments
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  list bindings source_name destination_name routing_key
+```
+
+If you imported cluster-wide definitions, also verify that the required virtual hosts, users, and permissions are present:
+
+```bash
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  list vhosts name
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  list users name tags
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  list permissions user vhost configure write read
+```
+
+If you import primary definitions and still use a DR-specific downstream exchange or queue, create those DR-specific objects after the import. The procedure below declares the example objects explicitly. If your DR definitions already contain equivalent objects, verify them and skip the duplicate declaration commands.
+
+## Procedure
+
+### 1. Prepare the primary exchange
+
+Declare the upstream exchange on `rabbitmq-primary`. The example below uses a durable topic exchange named `app.events`.
+
+In the commands below, `rabbitmqadmin` connects to the RabbitMQ management endpoint, for example port `15672`. The federation upstream URI configured later must use the AMQP listener, for example `5672` for `amqp://` or `5671` for `amqps://`.
+
+```bash
+rabbitmqadmin \
+  --host <primary-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  declare exchange name=app.events type=topic durable=true
+```
+
+If your applications already publish to an existing exchange, reuse that exchange name instead of creating a new one.
+
+### 2. Prepare the DR exchange, queue, and binding
+
+Declare a downstream exchange, a DR queue, and a binding on `rabbitmq-dr`. Declare the queue once, then use a queue policy for message retention instead of redeclaring the queue with different arguments.
+
+```bash
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  declare exchange name=app-events-dr type=topic durable=true
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  declare queue name=app-events-dr-q durable=true
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  declare binding source=app-events-dr destination_type=queue destination=app-events-dr-q routing_key="orders.*"
+```
+
+The downstream binding controls which routing keys are requested from the upstream side. Binding changes are propagated asynchronously, so allow a short delay before expecting the new filtering behavior to take effect.
+
+### 3. Define the DR backlog retention window
+
+Federated exchanges are best treated as a bounded warm-standby pattern. The DR side should retain messages for a deliberate window instead of allowing unbounded accumulation while standby consumers are stopped.
+
+Use message TTL on the DR queue to define how long messages can remain in the standby backlog. Do not set `expires` or `x-expires` on this durable standby queue. Queue expiration deletes an unused queue after a period of inactivity. In a warm-standby design, the DR queue might intentionally have no active consumers for long periods, so queue expiration can remove the queue and the accumulated DR backlog.
+
+The following example keeps messages in `app-events-dr-q` for up to 24 hours by applying a queue policy:
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- \
+  rabbitmqctl set_policy -p / dr-queue-retention \
+  "^app-events-dr-q$" \
+  '{"message-ttl":86400000}' \
+  --priority 20 \
+  --apply-to queues
+```
+
+If another queue policy already applies to the DR queue, add `message-ttl` to that policy instead of creating a competing policy. A queue can be affected by policy precedence, so verify the active policy after the change.
+
+Verify the policy and queue:
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_policies -p /
+
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  list queues name durable policy arguments messages
+```
+
+This example bounds the standby backlog to a 24-hour message retention window. Shorter values reduce disk growth but narrow the recovery window. Longer values increase the amount of standby history available during failover, but they also increase disk usage and backlog risk on the DR side.
+
+Choose the retention window according to:
+
+- The acceptable recovery point for the workload.
+- The expected peak message volume during a primary-site outage.
+- The amount of storage available on the DR cluster.
+
+### 4. Configure the federation upstream on the DR cluster
+
+Run the following command on `rabbitmq-dr` to create a federation upstream named `primary-app-events`:
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- \
+  rabbitmqctl set_parameter -p / federation-upstream primary-app-events \
+  '{"uri":"amqp://<username>:<password>@<primary-host>:<primary-port>/%2f","exchange":"app.events","max-hops":1,"reconnect-delay":5}'
+```
+
+This configuration means:
+
+- `uri`: the AMQP connection address for the upstream RabbitMQ cluster. The trailing `%2f` is the URL-encoded form of the default `/` virtual host. If the upstream exchange is in a non-default virtual host, replace `%2f` with the URL-encoded upstream virtual host name.
+- `exchange`: the upstream exchange to consume from.
+- `max-hops`: limits how many federation links a message can traverse and helps avoid cycles.
+- `reconnect-delay`: controls how long the link waits before reconnecting after disconnection.
+
+If your environment requires TLS, use an `amqps://` URI and the relevant TLS connection parameters supported by RabbitMQ AMQP URIs.
+
+### 5. Apply a federation policy to the downstream exchange
+
+Apply a policy on `rabbitmq-dr` so that the downstream exchange `app-events-dr` uses the upstream definition.
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- \
+  rabbitmqctl set_policy -p / dr-federated-exchange \
+  "^app-events-dr$" \
+  '{"federation-upstream":"primary-app-events"}' \
+  --priority 10 \
+  --apply-to exchanges
+```
+
+Verify that the upstream parameter and policy are present:
+
+```bash
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_parameters -p /
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_policies -p /
+kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl federation_status
+```
+
+### 6. Publish test messages to the primary exchange
+
+Publish one or more persistent test messages to `app.events` on `rabbitmq-primary`.
+
+```bash
+rabbitmqadmin \
+  --host <primary-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  publish exchange=app.events routing_key=orders.created payload='{"event":"created","id":"1001"}' properties='{"delivery_mode":2,"content_type":"application/json"}'
+
+rabbitmqadmin \
+  --host <primary-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  publish exchange=app.events routing_key=orders.updated payload='{"event":"updated","id":"1001"}' properties='{"delivery_mode":2,"content_type":"application/json"}'
+```
+
+### 7. Verify that the DR side receives the replicated messages
+
+Inspect the queue bound to the downstream exchange on `rabbitmq-dr` without removing the backlog:
+
+```bash
+rabbitmqadmin \
+  --host <dr-host> \
+  --port 15672 \
+  --username <username> \
+  --password <password> \
+  --vhost / \
+  get queue=app-events-dr-q count=10 ackmode=ack_requeue_true
+```
+
+If federation is working, the DR queue will receive messages published to the upstream exchange with routing keys that match the downstream binding. `ack_requeue_true` requeues the inspected messages so the standby backlog is not consumed during verification. If you validate with disposable test messages or a disposable test queue, you can use a destructive acknowledgment mode after confirming that it is safe for your DR plan.
+
+### 8. Prepare the application failover procedure
+
+Federation only moves selected message flows. It does not switch applications automatically. For an actual DR switchover, define the application-side steps required to:
+
+1. Redirect producers to `rabbitmq-dr`.
+2. Redirect consumers to `rabbitmq-dr`.
+3. Confirm that the required exchanges, queues, bindings, users, policies, TLS materials, Kubernetes resources, and application secrets already exist on the DR side.
+4. Confirm that the DR queue backlog is within the message TTL window that your recovery plan expects.
+5. Decide how to resume or reconcile traffic when the primary site becomes available again.
+
+## Verification
+
+Use the following checks after configuration:
+
+| Check | Command | Expected Result |
+| --- | --- | --- |
+| Federation plugin enabled on DR | `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmq-plugins list -e` | `rabbitmq_federation` is enabled. If you enabled the management plugin, `rabbitmq_federation_management` is also enabled |
+| DR vhost topology is present | `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> --vhost / list exchanges name type durable`, `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> --vhost / list queues name durable policy arguments`, and `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> --vhost / list bindings source_name destination_name routing_key` | The exchanges, queues, bindings, and policies required by the DR workload are present in the target virtual host |
+| DR cluster-wide definitions are present | `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> list vhosts name`, `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> list users name tags`, and `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> list permissions user vhost configure write read` | The virtual hosts, users, and permissions required by the DR workload are present when you depend on cluster-wide definitions import |
+| DR queue message TTL policy exists | `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_policies -p /` | Policy `dr-queue-retention` or an equivalent existing policy applies `message-ttl` to the DR queue |
+| Federation upstream exists on DR | `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_parameters -p /` | A `federation-upstream` parameter named `primary-app-events` is listed |
+| Federation policy exists on DR | `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl list_policies -p /` | Policy `dr-federated-exchange` applies to exchanges |
+| Federation link health on DR | `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl federation_status` | The link for `primary-app-events` is reported as `running`; `stopped`, repeated restart, or error states indicate a connectivity or configuration problem |
+| Primary exchange exists | `rabbitmqadmin --host <primary-host> --port 15672 --username <username> --password <password> --vhost / list exchanges name type durable` | `app.events` is present and durable |
+| Message replication works without consuming the standby backlog | `rabbitmqadmin --host <dr-host> --port 15672 --username <username> --password <password> --vhost / get queue=app-events-dr-q count=10 ackmode=ack_requeue_true` | Messages published to `app.events` appear on the DR side and are requeued after inspection |
+
+If you also enable `rabbitmq_federation_management` on the DR cluster, you can inspect federation configuration and runtime state from the federation-related pages in the management UI.
+
+## Limitations and Design Notes
+
+Keep the following limitations in mind when you use federation for DR:
+
+- Replication is asynchronous, so lag is expected during normal operation and can increase during network problems.
+- A federated exchange is not a substitute for mirrored or quorum queue design, persistent storage, or backups.
+- `RPO=0` is not guaranteed. Messages can be delayed or absent on the DR side when links are unavailable.
+- Federation does not synchronize RabbitMQ definitions. Manage definitions separately through export and import, GitOps, application bootstrap code, or another controlled process.
+- Definitions export and import is a snapshot operation. Re-run it or update the DR definitions whenever the primary topology, users, permissions, parameters, or policies change.
+- Downstream bindings affect what is copied from upstream. Binding updates are eventual, not instantaneous.
+- Publications sent directly to the downstream exchange are not reflected back to queues bound only on the upstream side.
+- The default exchange and internal exchanges cannot be federated.
+- `max-hops` helps avoid cycles, but it does not remove every duplicate scenario in complex topologies.
+- Durable exchanges and queues reduce recovery risk, but they do not change federation from asynchronous to synchronous replication.
+- Message TTL defines the practical warm-standby backlog window. Larger values increase the available replay window but also increase disk consumption on the DR side.
+- Queue expiration should not be used for a durable standby queue that must survive long periods without consumers.
+- Authentication, authorization, DNS, ports, firewall rules, and TLS certificate trust must all be correct for the link to stay healthy.
+
+## Troubleshooting
+
+### Plugins are not enabled
+
+Symptom:
+`rabbitmq-plugins list -e` on `rabbitmq-dr` does not show `rabbitmq_federation`, or does not show `rabbitmq_federation_management` when you expect management UI or API support.
+
+Checks:
+
+- Confirm that `spec.rabbitmq.additionalPlugins` on `rabbitmq-dr` includes `rabbitmq_federation`.
+- If you need the federation management UI or API pages, confirm that `spec.rabbitmq.additionalPlugins` on `rabbitmq-dr` also includes `rabbitmq_federation_management`.
+- Check whether the DR RabbitMQ pods have restarted after the spec change.
+
+Recommendation:
+Update the `rabbitmq-dr` `RabbitmqCluster` resource, wait for the rollout to complete, and verify the plugins again on the DR cluster.
+
+### DR definitions are missing
+
+Symptom:
+Federation is configured, but producers or consumers fail after failover because exchanges, queues, bindings, users, permissions, policies, or TLS materials are missing on `rabbitmq-dr`.
+
+Checks:
+
+- Confirm whether definitions are managed by GitOps, application bootstrap code, or RabbitMQ definitions export and import.
+- On `rabbitmq-dr`, list exchanges, queues, bindings, users, permissions, parameters, and policies that the application requires.
+- Confirm that Kubernetes `Secret` objects, certificates, and application connection configuration have also been prepared for the DR environment.
+- If definitions were imported, confirm that site-specific definitions were reviewed and adjusted before import.
+
+Recommendation:
+Synchronize the required RabbitMQ definitions and platform resources before declaring the DR site ready. Do not rely on federation to create application topology or security definitions.
+
+### The federation parameter or policy is missing
+
+Symptom:
+`rabbitmqctl list_parameters -p /` or `rabbitmqctl list_policies -p /` on `rabbitmq-dr` does not show the expected objects.
+
+Checks:
+
+- Re-run the `set_parameter` and `set_policy` commands.
+- Make sure the commands were run on the DR cluster and the correct virtual host.
+- Confirm that the policy pattern matches the downstream exchange name exactly.
+- Run `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl federation_status` to confirm whether the link is missing or stopped.
+
+Recommendation:
+Recreate the parameter and policy with the correct virtual host, exchange name, and policy pattern.
+
+### Messages do not appear on the DR side
+
+Symptom:
+Publishing to `app.events` succeeds, but `app-events-dr-q` remains empty.
+
+Checks:
+
+- Confirm that the upstream exchange is `app.events` and the downstream exchange is `app-events-dr`.
+- Confirm that the downstream queue is bound to `app-events-dr` with the expected routing key.
+- Publish a routing key that matches the downstream binding, such as `orders.created`.
+- Allow time for asynchronous binding propagation and link reconnection.
+- Check `rabbitmqctl federation_status` on `rabbitmq-dr`. A healthy link is typically reported as `running`.
+- Check that the message TTL policy has not expired older test messages before you consume them.
+
+Recommendation:
+Correct the exchange names, binding pattern, routing key, or retention window, then test again.
+
+### Authentication, network, or TLS problems interrupt the link
+
+Symptom:
+The upstream parameter exists, but replication does not occur consistently.
+
+Checks:
+
+- Verify that `<primary-host>:<primary-port>` is reachable from the DR RabbitMQ pods.
+- Verify that the user in the upstream URI can connect to the upstream virtual host.
+- If using TLS, verify certificate trust and use `amqps://` in the upstream URI.
+- Run `kubectl exec -n <namespace> rabbitmq-dr-server-0 -- rabbitmqctl federation_status` and inspect whether the link is `stopped` or shows repeated failures.
+
+Recommendation:
+Resolve connectivity or credential issues first, then wait for the federation link to reconnect.
+
+### Duplicate messages appear after topology changes or reconnects
+
+Symptom:
+Consumers on the DR side receive duplicate business events.
+
+Checks:
+
+- Confirm that `max-hops` is set conservatively, for example `1` for a simple primary-to-DR topology.
+- Check whether you accidentally configured multiple upstreams or bidirectional links.
+- Review application behavior during reconnects and retries.
+
+Recommendation:
+Simplify the topology, keep `max-hops` low, and make consumers idempotent.
