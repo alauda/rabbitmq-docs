@@ -1,0 +1,86 @@
+---
+weight: 75
+---
+
+# Troubleshoot RabbitMQ
+
+Use this guide when a RabbitMQ instance is unhealthy, clients cannot connect, queues are growing unexpectedly, or an upgrade or migration does not behave as planned.
+
+For each problem, start with the symptom, confirm the impact, run the suggested checks, and only then choose a remediation.
+
+## Pod is Running but the Cluster is Not Healthy
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | Pods are `Running` or `Ready`, but the workload still fails or the broker node count is lower than expected. |
+| Impact | Producers, consumers, or queue replicas can fail or route unevenly. |
+| Common causes | Peer discovery problems, storage issues, failed cluster join, or split cluster membership. |
+| Checks | `kubectl get rabbitmqcluster <instance-name>`, `kubectl get pods -l app.kubernetes.io/name=<instance-name>`, `kubectl exec <pod> -- rabbitmqctl cluster_status` |
+| Recommendations | Compare `status.conditions` with `rabbitmqctl cluster_status`. If Pod readiness and broker membership disagree, treat the cluster as degraded until all expected broker nodes appear in `cluster_status`. |
+
+## Clients Cannot Authenticate or Authorize
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | Clients report access refused, permission denied, or cannot open channels. |
+| Impact | Producers cannot publish and consumers cannot consume. |
+| Common causes | Wrong user, wrong password, missing virtual host, or insufficient `configure`, `write`, or `read` permissions. |
+| Checks | `rabbitmqadmin list users`, `rabbitmqadmin list vhosts`, `rabbitmqadmin list permissions`, application configuration review |
+| Recommendations | Verify that the application uses the intended virtual host and dedicated user, and confirm that permissions match the required resource naming pattern. |
+
+## TLS Connections Fail
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | TLS handshake failures, unknown CA errors, or hostname verification errors. |
+| Impact | Clients and operational tools cannot connect to RabbitMQ. |
+| Common causes | Missing CA trust, wrong SANs in the certificate, disabled plain listeners before clients were updated, or wrong endpoint port. |
+| Checks | `kubectl explain rabbitmqcluster.spec.tls`, `kubectl exec <pod> -- rabbitmq-diagnostics listeners`, client-side TLS trust store review |
+| Recommendations | Reissue certificates with the required service and external names, distribute the CA certificate, and verify that clients use `amqps://` or HTTPS with the correct port. |
+
+## Publishing is Blocked or Slow
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | Publishers stall, connection throughput drops, or application logs show blocked connections. |
+| Impact | Message ingestion falls behind or stops. |
+| Common causes | Memory alarms, disk alarms, or queue backlog growth. |
+| Checks | `kubectl exec <pod> -- rabbitmq-diagnostics status`, `rabbitmqadmin list queues name messages message_bytes consumers`, platform monitoring dashboards |
+| Recommendations | Resolve disk or memory pressure first. Then investigate why consumers are not keeping up and whether queue TTL or length limits should be added. |
+
+## Queues Grow Without Consumers Catching Up
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | `messages_ready` or `messages_unacknowledged` grows for a sustained period. |
+| Impact | Disk usage rises, publish latency can increase, and consumers can fall far behind. |
+| Common causes | Consumer outages, low prefetch, slow downstream dependencies, or a retry loop. |
+| Checks | `rabbitmqadmin list queues name messages consumers arguments`, application consumer metrics, retry and DLQ topology review |
+| Recommendations | Restore or scale consumers, inspect retry logic, and add queue policies such as `message-ttl`, `max-length`, or DLQ routing when the workload requires bounded backlog behavior. |
+
+## Upgrade or Migration is Stuck
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | A version upgrade or Shovel migration does not complete as expected. |
+| Impact | The environment remains in a prolonged change window. |
+| Common causes | Cluster health issues before the change, incompatible plugins, insufficient storage, or unreachable source or destination brokers. |
+| Checks | `kubectl get rabbitmqcluster <instance-name> -o yaml`, `kubectl exec <pod> -- rabbitmq-plugins list -e`, `kubectl exec <pod> -- rabbitmqctl shovel_status`, `kubectl exec <pod> -- rabbitmq-diagnostics status` |
+| Recommendations | Reconfirm baseline health before continuing, verify network reachability and plugin compatibility, and stop the change if the cluster cannot maintain healthy membership. |
+
+## Management API or UI is Unavailable
+
+| Item | Guidance |
+| --- | --- |
+| Symptom | The management endpoint times out or returns errors. |
+| Impact | `rabbitmqadmin`, the management UI, and operational automation cannot use the HTTP API. |
+| Common causes | Service exposure problems, TLS mismatch, management listener disabled, or the broker is overloaded. |
+| Checks | `kubectl get svc <instance-name>`, `kubectl get endpoints <instance-name>`, `kubectl exec <pod> -- rabbitmq-diagnostics listeners` |
+| Recommendations | Confirm that the service type and port mapping match the access method, and verify whether TLS-only listeners are enabled. |
+
+## Related Information
+
+- [Check RabbitmqCluster Status](./70-check-rabbitmqcluster-status)
+- [Secure Client Connections with TLS](./15-secure-client-connections-with-tls)
+- [Configure Dead-Letter Exchanges and Retry Queues](./55-configure-dead-letter-exchanges-and-retry-queues)
+- [Configure Message TTL and Queue Length Limits](./60-configure-message-ttl-and-queue-length-limits)

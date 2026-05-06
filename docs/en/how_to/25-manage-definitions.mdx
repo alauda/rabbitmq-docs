@@ -1,0 +1,182 @@
+---
+weight: 25
+---
+
+# Manage RabbitMQ Definitions
+
+RabbitMQ definitions describe broker configuration such as virtual hosts, users, permissions, exchanges, queues, bindings, policies, runtime parameters, and operator policies. Use definitions to review, promote, or seed topology and security configuration across environments.
+
+Definitions management is not a full backup and restore mechanism. Definitions do not contain queue contents, durable message stores, stream data, Kubernetes resources, TLS private keys stored outside RabbitMQ, or application configuration.
+
+## Applicable Scenarios
+
+Use definitions management when you need to:
+
+- Move reviewed topology and access-control definitions between environments.
+- Seed a disaster recovery cluster with the same virtual hosts, users, permissions, exchanges, queues, bindings, policies, and runtime parameters.
+- Store sanitized RabbitMQ topology as an auditable configuration artifact.
+- Compare the current broker topology with the expected topology.
+
+Do not use definitions export and import as a way to recover queued messages.
+
+## Choose the Export Scope
+
+Definitions export can be cluster-wide or virtual-host scoped:
+
+| Scope | Includes | Use When |
+| --- | --- | --- |
+| Cluster-wide export | Virtual hosts, users, permissions, exchanges, queues, bindings, policies, runtime parameters, and related broker definitions. | You are preparing a new environment or DR cluster that must contain both topology and access-control definitions. |
+| Single-vhost export | Definitions scoped to one virtual host, such as exchanges, queues, bindings, policies, and parameters. | Users, permissions, and the target virtual host already exist, and you only need to promote topology for that virtual host. |
+
+The exact keys in the exported file depend on the RabbitMQ version and export scope. Always inspect the generated JSON before importing it.
+
+## Export Definitions
+
+### Cluster-wide export
+
+Run a cluster-wide export when you need both topology and access-control definitions:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  export rabbitmq-definitions.json
+```
+
+You can also export from a RabbitMQ Pod:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl export_definitions /tmp/rabbitmq-definitions.json
+```
+
+Copy the file from the Pod only if your operational process requires a local copy:
+
+```bash
+kubectl -n <namespace> cp \
+  <instance-name>-server-0:/tmp/rabbitmq-definitions.json \
+  ./rabbitmq-definitions.json
+```
+
+### Single-vhost export
+
+Use a single-vhost export when the target virtual host, users, and permissions are already managed separately:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost payments \
+  export payments-topology.json
+```
+
+In RabbitMQ 3.8.16, a vhost-scoped export contains topology keys such as exchanges, queues, bindings, parameters, and policies, but it does not include users, permissions, or virtual host records. Verify the output in your environment before relying on the file.
+
+## Review Definitions Before Import
+
+Before importing definitions into another cluster, review the file for:
+
+- Site-specific upstream URIs, Shovel parameters, Federation parameters, or policies.
+- Users or permissions that should not exist in the target environment.
+- Queue arguments that should differ between environments, such as message TTL or queue length limits.
+- Runtime parameters that reference primary-site hostnames.
+- Password hashes and other sensitive values that must be protected.
+
+Store reviewed files in a controlled location. If you commit definitions to Git, remove environment-specific values and secrets first.
+
+## Import Definitions
+
+Import the reviewed file into the target RabbitMQ cluster:
+
+```bash
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  import rabbitmq-definitions.json
+```
+
+If the file was exported for a single virtual host, include the same target virtual host on import:
+
+```bash
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost payments \
+  import payments-topology.json
+```
+
+When importing from inside a Pod, place the file in the Pod first and run:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl import_definitions /tmp/rabbitmq-definitions.json
+```
+
+## Verify Imported Definitions
+
+Verify topology:
+
+```bash
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost payments \
+  list exchanges name type durable
+
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost payments \
+  list queues name durable policy arguments
+
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost payments \
+  list bindings source_name destination_name routing_key
+```
+
+If you imported cluster-wide definitions, also verify access-control objects:
+
+```bash
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list vhosts name
+
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list users name tags
+
+rabbitmqadmin \
+  --host <target-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list permissions user vhost configure write read
+```
+
+## Related Information
+
+- [RabbitMQ Disaster Recovery with Federated Exchanges](./40-disaster-recovery-with-federated-exchanges)
+- [Manage Users, Virtual Hosts, and Permissions](./20-manage-users-vhosts-and-permissions)
+- [RabbitMQ Definitions](https://www.rabbitmq.com/docs/definitions)

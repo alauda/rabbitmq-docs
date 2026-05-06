@@ -1,0 +1,6 @@
+interface:
+  display_name: "产品文档写作"
+  short_description: "写文档、做验证、出带 Red Hat 对标链接的详细报告。"
+  default_prompt: "使用 $product-doc-writer 按真正双 agent 工作流编写或修订产品文档：自动拉起 Writer agent 负责写作和 Kubernetes 验证，再拉起 Reviewer agent 独立审阅、打分，并在根目录生成包含 Red Hat 官方参考链接、功能对标关系和差距分析的最终报告。"
+policy:
+  allow_implicit_invocation: true

@@ -1,51 +1,80 @@
 ---
 weight: 75
-sourceSHA: 3d933d377cf27d6f42638adec1a25341fdb947afa78d7fc6ed64006e22d1b948
 ---
 
-# Monitoring and Alerts
+# Monitoring, Metrics, and Alerts
 
-The monitoring data in the embedded panel can be used for RabbitMQ monitoring and alerts in terms of resources, performance, etc., and supports the configuration of notification strategies.
+Use the platform monitoring dashboards and alerting policies to observe RabbitMQ resource usage, broker health, queue growth, and traffic patterns. Monitoring should answer two different questions:
 
-The intuitively presented monitoring data can assist in decision-making for operational inspections or performance tuning, and the comprehensive alert and notification mechanism will help ensure stable database operations.
+- Is the instance healthy enough to accept traffic?
+- Is the workload keeping up with its message volume and retention targets?
 
-## Monitoring
+## Metrics Collection
 
-The platform collects commonly used monitoring metrics for RabbitMQ resources, performance, etc., by default. In the instance's **Monitoring** tab, real-time monitoring data for the metrics can be viewed.
+The platform collects RabbitMQ metrics by default. The embedded monitoring panel presents the most common broker and resource signals for operational inspection and performance tuning.
 
-| Category             | Metrics                     |
-| ------------------- | --------------------------- |
-| **Node Monitoring**       | Monitoring of node available memory, disk, file descriptors, and other metrics |
-| **Message Monitoring**       | Monitoring of sent and received messages |
-| **Queue Monitoring**       | Overall monitoring of queues |
-| **Channel Monitoring** | Overall monitoring of channels |
-| **Connection Monitoring**       | Overall monitoring of client connections |
+The RabbitMQ Prometheus exporter is exposed by the broker on port `15692`. Verify that the listener is present:
 
-> RabbitMQ metrics primarily expose overall metrics for various components; thus, the default monitoring panel cannot accurately monitor the status of a specific `Queue` or `Exchange`.
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmq-diagnostics listeners
+```
 
-## Alerts
+Verify that the Service exposes the expected ports:
 
-Go to the Application Service's **Alerts** > **Alert Policies** page to create an alert policy corresponding to RabbitMQ (you may also use the platform-wide alert feature to create alerts).
+```bash
+kubectl -n <namespace> get svc <instance-name>
+```
 
-### Configuring Alert Policies
+## Key Metric Categories
 
-To enable alerts, first, create an alert policy in the Application Service. The alert policy describes the objects you wish to monitor, under what circumstances you wish to receive alerts, and how you should be notified of related alerts.
+| Category | What to Watch | Why It Matters |
+| --- | --- | --- |
+| Instance availability | `RabbitmqCluster` phase, readiness, and service reachability | Shows whether the cluster is available from the platform and network perspective. |
+| Connections and channels | Connection count, channel count, consumer count | Sudden drops or spikes usually indicate client-side failures or connection storms. |
+| Publish and delivery rates | Message ingress, delivery, acknowledgement, and redelivery rates | Shows whether producers and consumers remain in balance. |
+| Queue backlog | `messages_ready`, `messages_unacknowledged`, queue count | Indicates consumer lag, stuck consumers, or retry loops. |
+| Memory | Memory usage, high watermark, memory alarms | Memory alarms can block publishers and reduce throughput. |
+| Disk | Free disk space and disk alarms | Disk alarms can block publishers and indicate a backlog or storage sizing problem. |
+| File descriptors and sockets | Used file descriptors and socket count | Protects the broker from exhausting connection-related resources. |
+| Plugins and listeners | Management, Prometheus, TLS, Shovel, or Federation listeners | Confirms that operational features remain enabled after updates. |
 
-The platform includes the following built-in alert metrics:
+> RabbitMQ exports mostly broker-level metrics by default. When you need detailed per-queue or per-exchange analysis, combine broker metrics with application metrics, queue inspection commands, and workload-specific dashboards.
 
-| Name         | Recommended Trigger Conditions            | Description                              |
-| :----------- | :---------------------------------------- | :-------------------------------------- |
-| Instance Availability      | !=1, and persists for 30 seconds        | Monitors the availability of the cluster |
-| Channel Count       | Set thresholds based on actual specifications and client applications | Real-time monitoring of the number of channels |
-| Message Write Frequency     | Set thresholds based on actual specifications | Real-time monitoring of message write frequency |
-| Connection Count        | Set thresholds based on actual specifications | Real-time monitoring of the number of connections |
-| Queue Count       | Set thresholds based on actual specifications | Real-time monitoring of the number of queues |
-| Node CPU Utilization | >80%, and persists for 30 seconds       | Real-time monitoring of CPU usage; if CPU usage is too high, consider scaling. |
-| Node Memory Utilization    | >80%, and persists for 30 seconds       | Real-time monitoring of memory usage; if memory usage is too high, scaling is needed immediately. |
-| Node Storage Space Utilization  | >80%, and persists for 30 seconds       | Real-time monitoring of storage space; if usage is too high, consider scaling. |
+## Recommended Alert Signals
 
-These alert metrics allow for the quick creation of alert policies.
+Create or tune alert policies for the following conditions:
 
-In addition to the built-in alert metrics, custom alert metrics can also be defined. Custom alerts require you to edit PromQL yourself and submit it to the alert metric form. PromQL is a relatively complex expression that can be edited and debugged using the built-in Prometheus Console. For basic PromQL support, please refer to the [PromQL official documentation](https://prometheus.io/docs/prometheus/latest/querying/basics/).
+| Signal | Recommended Starting Point | Operational Meaning |
+| --- | --- | --- |
+| Instance availability | `!= 1` for 30 seconds | The cluster is not fully available to clients. |
+| Node memory utilization | `> 80%` for 30 seconds | Memory pressure is rising and can trigger broker alarms. |
+| Node storage utilization | `> 80%` for 30 seconds | The broker is approaching disk pressure and publish blocking risk. |
+| Channel count | Threshold based on application design | Sudden growth can indicate connection churn or channel leaks. |
+| Connection count | Threshold based on application design | Large drops or spikes often indicate client or network problems. |
+| Message write frequency | Threshold based on expected workload | A drop can indicate producer issues; a spike can require scaling or backlog controls. |
+| Queue backlog | Sustained growth in ready or unacknowledged messages | Consumers are not keeping up or retry patterns are unhealthy. |
 
-For more information on configuring and using alerts, please refer to <ExternalSiteLink name="acp" href="appservice/unified-om/alert-policy-mgt/index" children="Alert Management" />.
+## How to Interpret Common Signals
+
+| Signal | Interpretation | Recommended Follow-up |
+| --- | --- | --- |
+| Disk alarm is active | The broker is protecting itself because free space is below the configured watermark. | Inspect backlog, storage usage, and message retention policies. |
+| Memory alarm is active | The broker is under memory pressure and can block publishers. | Check connection churn, queue growth, and memory-heavy workloads. |
+| `messages_ready` grows | Consumers are not draining the queue fast enough. | Check consumer health, scaling, backlog controls, and retry topology. |
+| `messages_unacknowledged` grows | Consumers are holding deliveries longer than expected. | Check consumer latency, prefetch, downstream dependencies, and stuck consumers. |
+| Connection count drops sharply | Producers or consumers lost connectivity. | Check service exposure, TLS, credentials, and broker alarms. |
+| Connection count spikes sharply | Clients may be reconnecting repeatedly. | Check rolling restarts, DNS, TLS failures, and application reconnect loops. |
+
+## Alert Policy Guidance
+
+Go to the Application Service's **Alerts** > **Alert Policies** page to create alert policies for RabbitMQ. Built-in metrics are the fastest way to enable baseline coverage. When built-in metrics are not sufficient, create custom PromQL-based alerts and test them before you rely on them in production.
+
+For more information on configuring and using alerts, see the platform **Alert Management** documentation.
+
+## Related Information
+
+- [Check RabbitmqCluster Status](../how_to/70-check-rabbitmqcluster-status)
+- [Troubleshoot RabbitMQ](../how_to/75-troubleshoot-rabbitmq)
+- [RabbitMQ Monitoring Guide](https://www.rabbitmq.com/docs/monitoring)
+- [RabbitMQ Prometheus Integration](https://www.rabbitmq.com/docs/prometheus)

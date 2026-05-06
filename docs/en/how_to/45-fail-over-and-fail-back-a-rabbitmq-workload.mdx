@@ -1,0 +1,132 @@
+---
+weight: 45
+---
+
+# Fail Over and Fail Back a RabbitMQ Workload
+
+This guide describes the application-side runbook for failing over from a primary RabbitMQ environment to a prepared standby environment, and for failing the workload back after the primary site is ready again.
+
+This document assumes that topology, access control, TLS materials, and message-movement mechanisms have already been prepared. It does not replace a disaster recovery design. Use it together with workload-specific DR documents such as [RabbitMQ Disaster Recovery with Federated Exchanges](./40-disaster-recovery-with-federated-exchanges).
+
+## Prerequisites
+
+Before you fail over a workload, make sure that the following conditions are met:
+
+1. The standby environment has the required virtual hosts, users, permissions, exchanges, queues, bindings, policies, and Kubernetes `Secret` objects.
+2. The application has a documented way to switch broker endpoints, credentials, and TLS trust material.
+3. You know whether the event is a planned failover, an unplanned failover, or a failback after recovery.
+4. You know how messages are replicated or replayed between sites, for example by Federation, Shovel, application dual publishing, or business-level replay.
+
+## Planned Failover
+
+Use a planned failover when the primary site is still reachable and you can control the switchover order.
+
+### 1. Reduce new writes to the primary site
+
+If possible, stop or drain producers before you switch consumers. This limits message divergence during the switchover window.
+
+### 2. Verify the standby environment
+
+Check the standby cluster before you move traffic:
+
+- RabbitMQ Pods are ready.
+- `RabbitmqCluster` phase is `Active`.
+- Required users, virtual hosts, and permissions exist.
+- Required exchanges, queues, bindings, and policies exist.
+- Queue backlog freshness and replication lag are acceptable for the workload.
+- TLS listeners, if used, match the client configuration.
+
+### 3. Switch consumers
+
+Point consumers to the standby environment first when you want the standby site to start draining the replicated backlog before new producers are redirected there.
+
+### 4. Switch producers
+
+After consumers are ready on the standby site, update producers to publish to the standby RabbitMQ addresses and credentials.
+
+### 5. Verify message flow on the standby site
+
+Verify that:
+
+- Producers can publish successfully.
+- Consumers are connected and receiving messages.
+- Queue backlog behaves as expected.
+- Disk and memory alarms remain clear.
+
+## Unplanned Failover
+
+Use an unplanned failover when the primary site is not available or cannot be drained cleanly.
+
+### 1. Estimate data freshness
+
+If you use asynchronous replication such as Federation or Shovel, determine the likely message lag before you start the application on the standby site.
+
+### 2. Start consumers with idempotency enabled
+
+Because the exact cutover point is uncertain during an outage, duplicate deliveries can occur. Consumers should be ready to detect or tolerate duplicates.
+
+### 3. Switch producers to the standby site
+
+Update the application endpoint, credentials, and trust material to use the standby environment.
+
+### 4. Track backlog and alarms
+
+Watch the standby queue depth, consumer lag, and broker alarms while the standby site absorbs the workload.
+
+## Failback Procedure
+
+Failback is a separate controlled change. Do not switch traffic back to the primary site until the primary environment is healthy and its topology is current.
+
+### 1. Rebuild or verify the primary environment
+
+Before you fail back, verify the following on the primary side:
+
+- RabbitMQ version and plugins match the expected release.
+- Virtual hosts, users, permissions, exchanges, queues, bindings, policies, and parameters are correct.
+- TLS certificates and Kubernetes `Secret` objects are current.
+- Replication or replay direction is updated to refill the primary site when required.
+
+### 2. Decide the message cutback strategy
+
+Choose one of the following before you switch traffic back:
+
+- Drain the standby backlog completely, then switch traffic.
+- Freeze producers, move remaining backlog, and then switch.
+- Accept a workload-specific replay or duplicate window and switch at a planned cutover point.
+
+### 3. Switch consumers back
+
+Move consumers first when you want the primary site to drain the restored backlog before new producers are redirected there.
+
+### 4. Switch producers back
+
+After consumers on the primary site are stable, redirect producers back to the primary site.
+
+### 5. Verify steady state
+
+Confirm that:
+
+- Queue depth is stable on the primary site.
+- Consumers are no longer reading from the standby site.
+- Replication or migration jobs have been stopped or reversed according to the DR design.
+- Alerts and dashboards reflect the new active site.
+
+## Verification Checklist
+
+Use the following checklist for both failover and failback:
+
+| Check | Why It Matters |
+| --- | --- |
+| `RabbitmqCluster` phase is `Active` | Confirms that the operator considers the cluster reconciled. |
+| All expected Pods are `Ready` | Confirms Kubernetes-level readiness. |
+| `rabbitmqctl cluster_status` shows all expected broker nodes | Confirms broker-level cluster membership, which Pod readiness alone does not guarantee. |
+| Application users and permissions are present | Prevents authentication or authorization failures during cutover. |
+| Required exchanges, queues, and bindings are present | Prevents publish failures and unroutable messages. |
+| Queue backlog and replication lag are acceptable | Establishes whether the standby site is fresh enough for the workload. |
+| Disk and memory alarms are clear | Prevents publish blocking and backpressure during the cutover. |
+
+## Related Information
+
+- [RabbitMQ Disaster Recovery with Federated Exchanges](./40-disaster-recovery-with-federated-exchanges)
+- [Manage RabbitMQ Definitions](./25-manage-definitions)
+- [Check RabbitmqCluster Status](./70-check-rabbitmqcluster-status)

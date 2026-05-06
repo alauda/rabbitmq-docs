@@ -1,0 +1,123 @@
+---
+weight: 65
+---
+
+# Client Connection Recovery and Failover
+
+RabbitMQ client recovery is an application responsibility. The broker can accept reconnections, but the application still needs appropriate endpoint selection, retries, acknowledgements, and idempotency behavior.
+
+Use this guide to harden producers and consumers against node restarts, rolling upgrades, transient network failures, and site-level endpoint changes.
+
+## Design Principles
+
+Use the following design principles for production clients:
+
+- Configure more than one broker address when the client library supports it.
+- Separate producer and consumer connections so one blocked flow does not affect the other.
+- Use heartbeats and reasonable connection timeouts.
+- Enable automatic recovery when the client library provides it.
+- Use publisher confirms for producers.
+- Use manual acknowledgements and idempotent processing for consumers.
+- Treat site-level failover as an application configuration change even if node-level automatic recovery is enabled.
+
+## Java Example
+
+The RabbitMQ Java client supports automatic connection and topology recovery:
+
+```java
+ConnectionFactory factory = new ConnectionFactory();
+factory.setUsername("<username>");
+factory.setPassword("<password>");
+factory.setVirtualHost("/");
+factory.setAutomaticRecoveryEnabled(true);
+factory.setTopologyRecoveryEnabled(true);
+factory.setNetworkRecoveryInterval(5000);
+factory.setRequestedHeartbeat(30);
+factory.setConnectionTimeout(10000);
+
+Address[] addresses = {
+    new Address("<ip-1>", <port-1>),
+    new Address("<ip-2>", <port-2>),
+    new Address("<ip-3>", <port-3>)
+};
+
+Connection connection = factory.newConnection(addresses);
+Channel channel = connection.createChannel();
+channel.confirmSelect();
+```
+
+Use publisher confirms on producer channels and check confirmation failures in application code.
+
+## Python Example
+
+With `pika`, implement an explicit reconnect loop and recreate channels or consumers after connection failures:
+
+```python
+import pika
+import random
+import time
+
+def process_message(body):
+    print(f"Processing {body!r}")
+
+def on_message(channel, method, properties, body):
+    try:
+        process_message(body)
+        channel.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception:
+        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+
+credentials = pika.PlainCredentials("<username>", "<password>")
+endpoints = [
+    pika.ConnectionParameters("<ip-1>", <port-1>, "/", credentials, heartbeat=30),
+    pika.ConnectionParameters("<ip-2>", <port-2>, "/", credentials, heartbeat=30),
+    pika.ConnectionParameters("<ip-3>", <port-3>, "/", credentials, heartbeat=30),
+]
+
+while True:
+    try:
+        random.shuffle(endpoints)
+        connection = pika.BlockingConnection(endpoints)
+        channel = connection.channel()
+        channel.basic_qos(prefetch_count=50)
+        channel.basic_consume(
+            queue="orders",
+            on_message_callback=on_message,
+            auto_ack=False,
+        )
+        channel.start_consuming()
+    except pika.exceptions.AMQPConnectionError:
+        time.sleep(5)
+        continue
+```
+
+If your consumer depends on declared topology, recreate or verify the topology after reconnect according to the behavior of your client library.
+
+## Endpoint Failover Strategy
+
+Use one of the following endpoint strategies:
+
+| Strategy | Use When | Notes |
+| --- | --- | --- |
+| Multiple broker addresses in the client | Applications can receive and rotate through several addresses. | Good for node-level failover inside one cluster. |
+| Kubernetes Service or LoadBalancer address | Clients should use one stable address. | Simplifies configuration, but make sure the service type matches the traffic source. |
+| Config switch between primary and DR endpoints | You need site-level failover. | Use with a documented operational runbook and application restart or reload logic. |
+
+Automatic recovery across nodes in one cluster does not automatically switch the application to a different DR site. Site failover still requires configuration, DNS, or service-discovery changes.
+
+## Verification Checklist
+
+After you change client recovery settings, verify that:
+
+- The application can connect to more than one broker address.
+- Publishers use confirms and fail visibly when publishes are not accepted.
+- Consumers use manual acknowledgement and can restart cleanly.
+- The reconnect loop does not create duplicate consumer registrations.
+- TLS settings remain valid for every endpoint that the client can use.
+
+## Related Information
+
+- [Client Connection](./10-access)
+- [Secure Client Connections with TLS](./15-secure-client-connections-with-tls)
+- [Fail Over and Fail Back a RabbitMQ Workload](./45-fail-over-and-fail-back-a-rabbitmq-workload)
+- [RabbitMQ Reliability Guide](https://www.rabbitmq.com/docs/reliability)

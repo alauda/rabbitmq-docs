@@ -1,0 +1,156 @@
+---
+weight: 20
+---
+
+# Manage Users, Virtual Hosts, and Permissions
+
+Use RabbitMQ users, virtual hosts, and permissions to isolate applications and reduce the impact of leaked credentials. A production workload should not share the platform-generated administrator account with application clients.
+
+This guide shows how to create a virtual host, create an application user, and grant least-privilege permissions.
+
+## Prerequisites
+
+Before you manage users and permissions, make sure that the following conditions are met:
+
+1. You have the management endpoint or `kubectl exec` access to a RabbitMQ Pod.
+2. You have administrator credentials. For the platform-generated default account, see [User Management](../functions/20-user).
+3. You know the virtual host name, application username, and exchange or queue naming pattern that the application requires.
+
+## Permission Model
+
+RabbitMQ permissions are scoped to a virtual host and include three regular expressions:
+
+| Permission | Controls |
+| --- | --- |
+| `configure` | Which resources the user can declare, delete, or change. |
+| `write` | Which exchanges the user can publish to. |
+| `read` | Which queues the user can consume from and which exchanges the user can bind from. |
+
+Use narrow regular expressions for application users. Grant `administrator` tags only to operational users that need management privileges across the instance.
+
+## Procedure
+
+### 1. Create a virtual host
+
+Create a virtual host for the application:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  declare vhost name=payments
+```
+
+For commands executed inside a RabbitMQ Pod, you can also use `rabbitmqctl`:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl add_vhost payments
+```
+
+### 2. Create an application user
+
+Create a user for the application. Do not reuse this user for administration.
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  declare user name=payments-app password='<strong-password>' tags=
+```
+
+If you use `rabbitmqctl`, run:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl add_user payments-app '<strong-password>'
+```
+
+Store the application password in a Kubernetes `Secret` or in your approved secret manager. Do not store it in application manifests as plain text.
+
+### 3. Grant application permissions
+
+The following example allows the `payments-app` user to configure, publish to, and consume from resources that start with `payments.` in the `payments` virtual host:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  declare permission \
+  vhost=payments \
+  user=payments-app \
+  configure='^payments\.' \
+  write='^payments\.' \
+  read='^payments\.'
+```
+
+The equivalent `rabbitmqctl` command is:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl set_permissions -p payments payments-app \
+  '^payments\.' '^payments\.' '^payments\.'
+```
+
+### 4. Grant topic permissions when required
+
+If the application uses topic authorization, define topic permissions separately from resource permissions:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl set_topic_permissions -p payments payments-app amq.topic \
+  '^payments\.' '^payments\.'
+```
+
+Only configure topic permissions when your authorization model requires them.
+
+### 5. Verify access
+
+List virtual hosts, users, and permissions:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list vhosts name
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list users name tags
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  list permissions user vhost configure write read
+```
+
+Verify application connectivity with the application user, not with the administrator account.
+
+## Recommended Practices
+
+- Create a dedicated virtual host for each application or tenant boundary.
+- Create one RabbitMQ user for each application runtime identity.
+- Use narrow permission regular expressions instead of `.*` for application users.
+- Keep administrator users separate from producer and consumer users.
+- Rotate application passwords through Kubernetes `Secret` updates or your approved secret manager.
+- Remove users and permissions when an application is decommissioned.
+
+## Related Information
+
+- [Secure Client Connections with TLS](./15-secure-client-connections-with-tls)
+- [Manage RabbitMQ Definitions](./25-manage-definitions)
+- [RabbitMQ Access Control](https://www.rabbitmq.com/docs/access-control)
+- [RabbitMQ Virtual Hosts](https://www.rabbitmq.com/docs/vhosts)

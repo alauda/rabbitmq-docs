@@ -1,0 +1,207 @@
+---
+weight: 55
+---
+
+# Configure Dead-Letter Exchanges and Retry Queues
+
+Use dead-letter exchanges (DLX) to move messages out of the main processing path after negative acknowledgement, expiration, or queue overflow events. Combine DLX with retry queues when the workload must delay a second or later delivery attempt.
+
+This guide separates two concerns:
+
+- A dead-letter queue (DLQ) for messages that should stop normal processing.
+- A retry queue for messages that should return to the work queue after a delay.
+
+## Applicable Scenarios
+
+Use this pattern when you need one or more of the following:
+
+- Park permanently failed messages in a DLQ for inspection.
+- Delay retries instead of immediately requeueing a failed message.
+- Keep the main queue clear of messages that repeatedly fail.
+
+Do not rely on endless `basic.nack` or `basic.reject` loops with `requeue=true`. They create tight redelivery loops and make queue health harder to control.
+
+## Procedure
+
+In this example:
+
+- Producers publish work messages to `orders.work`.
+- Consumers read from `orders.q`.
+- Permanent failures go to `orders.dlq` through `orders.dlx`.
+- Transient failures are republished by the application to `orders.retry`.
+- `orders.retry.30s` holds retried messages for 30 seconds and then dead-letters them back to `orders.work`.
+
+### 1. Declare the exchanges
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare exchange name=orders.work type=direct durable=true
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare exchange name=orders.retry type=direct durable=true
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare exchange name=orders.dlx type=direct durable=true
+```
+
+### 2. Declare the work queue and DLQ
+
+The work queue dead-letters failed messages to `orders.dlx` with the routing key `orders.failed`:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare queue \
+  name=orders.q \
+  durable=true \
+  arguments='{"x-dead-letter-exchange":"orders.dlx","x-dead-letter-routing-key":"orders.failed"}'
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare queue name=orders.dlq durable=true
+```
+
+Bind the queues:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare binding \
+  source=orders.work \
+  destination_type=queue \
+  destination=orders.q \
+  routing_key=orders
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare binding \
+  source=orders.dlx \
+  destination_type=queue \
+  destination=orders.dlq \
+  routing_key=orders.failed
+```
+
+When a consumer rejects a message from `orders.q` with `requeue=false`, RabbitMQ dead-letters the message to `orders.dlq`.
+
+### 3. Declare the retry queue
+
+Create a retry queue that delays redelivery for 30 seconds:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare queue \
+  name=orders.retry.30s \
+  durable=true \
+  arguments='{"x-message-ttl":30000,"x-dead-letter-exchange":"orders.work","x-dead-letter-routing-key":"orders"}'
+```
+
+Bind the retry queue:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  declare binding \
+  source=orders.retry \
+  destination_type=queue \
+  destination=orders.retry.30s \
+  routing_key=orders.30s
+```
+
+### 4. Implement the application retry decision
+
+Use application logic to decide whether a failure is transient or permanent:
+
+- For transient failures, publish the message to `orders.retry` with the routing key `orders.30s`.
+- For permanent failures, reject the message from `orders.q` with `requeue=false`, or publish it explicitly to the DLQ path.
+
+When a consumer republishes a transient failure to `orders.retry`, it should acknowledge the original delivery only after the retry publish succeeds. In production, use publisher confirms for the retry publish path so the consumer does not delete the original message before RabbitMQ has accepted the retry copy.
+
+If the retry publish fails or the confirm is not received, do not positively acknowledge the original delivery. Requeue or retry according to your failure policy.
+
+Even with publisher confirms, duplicates are still possible during reconnects or partial failures. Consumers and downstream processors should remain idempotent.
+
+RabbitMQ does not provide a generic built-in retry counter for classic queues. If you need a maximum retry count, use application logic, inspect the `x-death` header, or adopt quorum queue delivery limits where appropriate.
+
+### 5. Verify the topology
+
+Verify exchanges, queues, and bindings:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list exchanges name type
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list queues name arguments messages consumers
+
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list bindings source_name destination_name routing_key
+```
+
+## Recommended Practices
+
+- Use a dedicated DLQ for inspection and replay.
+- Use delayed retry queues instead of immediate requeue loops.
+- Keep consumers idempotent because retries and failovers can create duplicate deliveries.
+- Decide in the application when a message should stop retrying.
+- Monitor DLQ growth. A growing DLQ usually indicates a code, schema, or dependency problem.
+
+## Related Information
+
+- [Configure Message TTL and Queue Length Limits](./60-configure-message-ttl-and-queue-length-limits)
+- [RabbitMQ Dead Letter Exchanges](https://www.rabbitmq.com/docs/dlx)
+- [RabbitMQ TTL](https://www.rabbitmq.com/docs/ttl)

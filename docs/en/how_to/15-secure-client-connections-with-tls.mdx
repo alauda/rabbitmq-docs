@@ -1,0 +1,141 @@
+---
+weight: 15
+---
+
+# Secure Client Connections with TLS
+
+Use TLS when producers, consumers, automation, or administrators connect to RabbitMQ over an untrusted network, through an external `NodePort` or `LoadBalancer`, or across clusters. TLS protects AMQP traffic and the management HTTP API from clear-text transmission.
+
+This guide covers RabbitMQ listener TLS for client access. It does not replace user, virtual host, or permission controls. Configure both TLS and least-privilege RabbitMQ users for production workloads.
+
+## Prerequisites
+
+Before you enable TLS, make sure that the following conditions are met:
+
+1. You have a `RabbitmqCluster` instance.
+2. You have a server certificate and private key for the RabbitMQ access names that clients use.
+3. The certificate Subject Alternative Name includes the in-cluster service DNS names and any external DNS names or IP addresses used by clients.
+4. If clients must verify a private CA, you have the CA certificate.
+5. Applications are prepared to use `amqps://` and the TLS management endpoint after non-TLS listeners are disabled.
+
+<Directive type="warning" title="Plan Listener Changes">
+  Setting `spec.tls.disableNonTLSListeners` to `true` disables non-TLS listeners for RabbitMQ, the management plugin, and supported protocol plugins. Enable this only after all clients and operational tools can use TLS endpoints.
+</Directive>
+
+## Procedure
+
+### 1. Create TLS secrets
+
+Create a TLS secret in the same namespace as the `RabbitmqCluster`:
+
+```bash
+kubectl -n <namespace> create secret tls rabbitmq-server-tls \
+  --cert=path/to/tls.crt \
+  --key=path/to/tls.key
+```
+
+If clients use a private CA, create a CA secret:
+
+```bash
+kubectl -n <namespace> create secret generic rabbitmq-ca \
+  --from-file=ca.crt=path/to/ca.crt
+```
+
+### 2. Configure the RabbitmqCluster
+
+Update the `RabbitmqCluster` to reference the TLS secret. Include `caSecretName` when the broker must trust a private CA for mutual TLS or for relevant protocol plugins such as `web_stomp` and `web_mqtt`. External AMQP or management clients still need the CA certificate in their own trust store.
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: <instance-name>
+  namespace: <namespace>
+spec:
+  tls:
+    secretName: rabbitmq-server-tls
+    caSecretName: rabbitmq-ca
+    disableNonTLSListeners: true
+```
+
+If you are migrating existing clients, keep `disableNonTLSListeners` unset or set it to `false` during the migration window. After all clients use TLS, update the field to `true`.
+
+### 3. Wait for the rollout
+
+Wait until the instance returns to the active phase and all RabbitMQ Pods are ready:
+
+```bash
+kubectl -n <namespace> get rabbitmqcluster <instance-name>
+
+kubectl -n <namespace> get pods \
+  -l app.kubernetes.io/name=<instance-name>
+```
+
+### 4. Verify TLS listeners
+
+Check the listener list from a RabbitMQ Pod:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmq-diagnostics listeners
+```
+
+For a TLS-only configuration, the output should include TLS listeners and should no longer show plain AMQP or plain HTTP listeners for the disabled protocols.
+
+Also verify the Kubernetes Service ports that are exposed to clients:
+
+```bash
+kubectl -n <namespace> get svc <instance-name>
+```
+
+### 5. Connect with TLS
+
+Use `amqps://` for AMQP clients:
+
+```text
+amqps://<username>:<password>@<rabbitmq-host>:5671/%2f
+```
+
+`%2f` is the URL-encoded form of the default `/` virtual host. Replace it with the URL-encoded virtual host that your application uses.
+
+Use TLS options when running `rabbitmqadmin` against the management API:
+
+```bash
+rabbitmqadmin \
+  --host <rabbitmq-host> \
+  --port <tls-management-port> \
+  --ssl \
+  --ssl-ca-cert-file path/to/ca.crt \
+  --username <username> \
+  --password <password> \
+  list queues name messages consumers
+```
+
+If the client certificate, key, or CA path is wrong, `rabbitmqadmin` fails before it can authenticate to RabbitMQ.
+
+## Verification
+
+Use the following checks after enabling TLS:
+
+| Check | Command | Expected Result |
+| --- | --- | --- |
+| `RabbitmqCluster` accepts the TLS spec | `kubectl -n <namespace> get rabbitmqcluster <instance-name> -o yaml` | The `spec.tls.secretName` value references the TLS secret. |
+| Pods are rolled out | `kubectl -n <namespace> get pods -l app.kubernetes.io/name=<instance-name>` | All RabbitMQ Pods are `Ready`. |
+| TLS listeners are active | `kubectl -n <namespace> exec <instance-name>-server-0 -- rabbitmq-diagnostics listeners` | TLS listeners are present for the protocols you enabled. |
+| Clients can connect | Client-specific health check or `rabbitmqadmin --ssl ... list queues` | The client connects without certificate or hostname verification errors. |
+
+## Troubleshooting
+
+| Symptom | Likely Cause | Recommendation |
+| --- | --- | --- |
+| Clients report hostname verification failures | The certificate does not include the service DNS name or external address used by the client. | Reissue the certificate with all required DNS names and IP addresses in the Subject Alternative Name. |
+| Clients report unknown CA errors | The client does not trust the CA that signed the server certificate. | Distribute the CA certificate to clients and configure the client trust store. |
+| Management commands fail after disabling non-TLS listeners | Operational tools still use the plain HTTP management endpoint. | Update tools to use `--ssl`, the TLS management port, and the CA certificate. |
+| Applications cannot connect after switching to `amqps://` | Port, URI encoding, vhost, or credential values do not match the TLS listener. | Verify the listener list, Service ports, virtual host, user permissions, and URL encoding. |
+
+## Related Information
+
+- [Access Methods](../functions/40-accessmethod)
+- [User Management](../functions/20-user)
+- [Client Connection](./10-access)
+- [RabbitMQ TLS Support](https://www.rabbitmq.com/docs/ssl)
