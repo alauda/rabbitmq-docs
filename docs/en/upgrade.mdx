@@ -17,8 +17,13 @@ The table below lists supported versions of the Alauda Streaming Service for Rab
 
 | Alauda RabbitMQ Version |  RabbitMQ Versions  | Kubernetes Versions |
 |:-----------------------:|:-------------------:|:-------------------:|
+| v4.2.x                  |  3.12.x, 4.2.x      | 1.25+               |
 | v4.1.x                  |  3.8.16, 3.12.x     | 1.25+               |
 | v4.0.x                  |  3.8.16, 3.12.x     | 1.25+               |
+
+:::warning Compatibility Change in v4.2.x
+RabbitMQ `3.8.16` is no longer supported in `v4.2.x`.
+:::
 
 ## Prerequisites
 
@@ -46,6 +51,10 @@ For version-specific changes, new features, and deprecations, see the 📝 **[Re
 
 ### RabbitMQ Version Alignment
 - **Description**: Ensure RabbitMQ version upgrades follow the operator's compatibility matrix.
+
+### Legacy Version Migration Notice
+- **Description**: If you are running RabbitMQ `3.8.16`, do not upgrade directly to `v4.2.x`.
+- **Action**: Upgrade or migrate workloads to a supported RabbitMQ version (`3.12.x` or `4.2.x`) before or during the `v4.2.x` adoption plan.
 
 ## Upgrade strategy
 

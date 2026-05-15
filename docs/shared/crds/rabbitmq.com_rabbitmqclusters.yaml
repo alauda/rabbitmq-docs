@@ -4326,6 +4326,16 @@ spec:
                         - NodePort
                       type: string
                   type: object
+                exporter:
+                  description: Exporter controls standalone rabbitmq-exporter resources.
+                  properties:
+                    enabled:
+                      description: Enabled controls whether standalone exporter resources are reconciled.
+                      type: boolean
+                    image:
+                      description: Image overrides the exporter image when specified.
+                      type: string
+                  type: object
                 skipPostDeploySteps:
                   description: |-
                     If unset, or set to false, the cluster will run `rabbitmq-queues rebalance all` whenever the cluster is updated.
@@ -4419,9 +4429,9 @@ spec:
                     Version is the version of the RabbitMQ image to use for RabbitMQ nodes in the RabbitmqCluster.
                     Must be provided together with ImagePullSecrets in order to use an image in a private registry.
                   enum:
-                    - 3.8.16
                     - 3.12.4
                     - "3.12"
+                    - "4.2"
                   type: string
               type: object
             status:
