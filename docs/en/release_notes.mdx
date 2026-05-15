@@ -7,6 +7,29 @@ i18n:
 title: Release Notes
 ---
 
+## v4.2.0
+
+### New and Optimized Features
+
+#### RabbitMQ 4.2 Upgrade Capability
+
+Introduced a complete 3.12.x to 4.2.x upgrade path, including:
+
+- Planned downtime migration (drain and migrate).
+- Zero-downtime blue-green migration based on Federation.
+
+#### RabbitMQ Exporter Integration
+
+Added opt-in standalone exporter support for per-cluster metrics.
+
+- Enable or disable exporter resources with `spec.exporter.enabled`.
+- Automatically manage `Deployment`, `Service`, and `ServiceMonitor` as `<cluster>-exporter`.
+- Support `spec.exporter.image` override and Prometheus scraping on `/metrics` (port `9419`).
+
+### Compatibility Changes
+
+- RabbitMQ 3.8.16 is no longer supported in v4.2.0.
+
 ## v4.1.0
 
 ### New and Optimized Features

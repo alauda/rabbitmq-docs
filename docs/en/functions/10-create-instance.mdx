@@ -7,13 +7,13 @@ sourceSHA: faff3f995cb480a65e6755e4df0b1e9367b69eea0a3b8e2d04fcf0428091434e
 
 RabbitMQ is a popular message queue middleware that features an efficient and reliable message asynchronous delivery mechanism. It is mainly used for data exchange and transmission between different systems and has a wide range of applications in various fields such as enterprise solutions, financial payments, telecommunications, e-commerce, social networking, instant messaging, video, the Internet of Things, and vehicle networking.
 
-In the current version, the following versions of RabbitMQ are supported: `3.8.16` and `3.12`. When creating an instance, only these two versions can be selected. The instance creation process will use `3.12` as an example.
+In the current version, the following RabbitMQ versions are supported: `3.12` and `4.2`. RabbitMQ `3.8.16` is no longer supported in v4.2.x. The instance creation process uses `4.2` as an example.
 
 <Directive type="tip" title="Version Suggestion">
-  When selecting a version, it is recommended to choose the latest supported version. `3.12` has the following advantages:
+  When selecting a version, use the latest supported version whenever possible. `4.2` is recommended for new deployments:
 
-  1. `3.12` supports production-ready quorum queues; additionally, the community has fixed many bugs, and performance has greatly improved in `3.12`.
-  2. `3.8.x` will be gradually phased out. If you are currently using the `3.8.x` series and later require version upgrades, it may impact business operations.
+  1. `4.2` includes newer community fixes and ongoing feature evolution.
+  2. If you are running `3.12`, plan and validate migration to `4.2` according to your business window.
 </Directive>
 
 ## Create RabbitMQ Instance
@@ -78,7 +78,7 @@ In the current version, the following versions of RabbitMQ are supported: `3.8.1
         type: ClusterIP
       upgradeOption:
         autoUpgrade: false
-      version: "3.12"
+      version: "4.2"
     EOF
     ```
 

@@ -13,7 +13,9 @@ Use the platform monitoring dashboards and alerting policies to observe RabbitMQ
 
 The platform collects RabbitMQ metrics by default. The embedded monitoring panel presents the most common broker and resource signals for operational inspection and performance tuning.
 
-The RabbitMQ Prometheus exporter is exposed by the broker on port `15692`. Verify that the listener is present:
+By default, RabbitMQ metrics are exposed by the broker on port `15692`. If standalone exporter integration is enabled (`spec.exporter.enabled=true`), metrics are also available from the exporter service on port `9419`.
+
+Verify that the broker listener is present:
 
 ```bash
 kubectl -n <namespace> exec <instance-name>-server-0 -- \
