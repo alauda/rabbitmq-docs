@@ -1,0 +1,144 @@
+---
+weight: 50
+---
+
+# Use Shovel for Message Migration
+
+Use RabbitMQ Shovel when you need to move messages between brokers, clusters, or virtual hosts. Shovel is well suited for queue-to-queue migration, temporary forwarding, or controlled replay into another environment.
+
+Shovel is not a full-cluster synchronization mechanism. It does not synchronize users, permissions, virtual hosts, exchanges, queues, bindings, Kubernetes resources, or application configuration. Prepare those objects separately before you rely on Shovel for workload migration.
+
+## Applicable Scenarios
+
+Use Shovel when you need one or more of the following:
+
+- Migrate messages from one queue to another queue in a new cluster.
+- Replay messages into a replacement environment during a controlled migration.
+- Move backlog between sites during a planned cutover.
+
+Use [RabbitMQ Disaster Recovery with Federated Exchanges](./40-disaster-recovery-with-federated-exchanges) when you need exchange-based asynchronous replication instead of queue-to-queue transfer.
+
+## Prerequisites
+
+Before you configure a Shovel, make sure that the following conditions are met:
+
+1. The cluster that hosts the Shovel has the `rabbitmq_shovel` plugin enabled.
+2. Enable `rabbitmq_shovel_management` when you want management UI or HTTP API visibility for dynamic Shovels.
+3. Source and destination RabbitMQ endpoints are reachable from the cluster that hosts the Shovel.
+4. The source and destination users have the required permissions.
+5. Destination exchanges or queues already exist, or you have an explicit process to create them before the migration.
+
+## Enable the Shovel plugins
+
+The following example enables the required plugins on the cluster that runs the Shovel:
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-migrator
+  namespace: <namespace>
+spec:
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_shovel
+      - rabbitmq_shovel_management
+```
+
+Verify the enabled plugins:
+
+```bash
+kubectl -n <namespace> exec rabbitmq-migrator-server-0 -- \
+  rabbitmq-plugins list -e
+```
+
+## Procedure
+
+### 1. Choose the host cluster for the dynamic Shovel
+
+Dynamic Shovels are stored as RabbitMQ runtime parameters. Create the Shovel on the cluster that has reliable network connectivity to both the source and destination brokers.
+
+### 2. Create the dynamic Shovel
+
+The following example moves messages from the `orders` queue on the source broker to the `orders-migrated` queue on the destination broker:
+
+```bash
+kubectl -n <namespace> exec rabbitmq-migrator-server-0 -- \
+  rabbitmqctl set_parameter -p / shovel move-orders \
+  '{
+    "src-protocol":"amqp091",
+    "src-uri":"amqp://<source-user>:<source-password>@<source-host>:5672/%2f",
+    "src-queue":"orders",
+    "dest-protocol":"amqp091",
+    "dest-uri":"amqp://<dest-user>:<dest-password>@<dest-host>:5672/%2f",
+    "dest-queue":"orders-migrated",
+    "ack-mode":"on-confirm",
+    "reconnect-delay":5,
+    "delete-after":"never"
+  }'
+```
+
+`%2f` is the URL-encoded default `/` virtual host. Replace it with the URL-encoded virtual host name that you actually use. If the user name or password contains reserved URI characters, URL-encode them as well.
+
+Use `ack-mode="on-confirm"` for production migrations so the source side is acknowledged only after the destination confirms the publish.
+
+### 3. Check the Shovel status
+
+Verify that the Shovel is running:
+
+```bash
+kubectl -n <namespace> exec rabbitmq-migrator-server-0 -- \
+  rabbitmqctl shovel_status
+```
+
+You can also inspect runtime parameters:
+
+```bash
+kubectl -n <namespace> exec rabbitmq-migrator-server-0 -- \
+  rabbitmqctl list_parameters -p /
+```
+
+### 4. Verify message movement
+
+Check the source and destination queue depths:
+
+```bash
+rabbitmqadmin \
+  --host <source-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list queues name messages consumers
+
+rabbitmqadmin \
+  --host <dest-management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list queues name messages consumers
+```
+
+### 5. Remove the Shovel when migration completes
+
+If the Shovel is temporary, remove it after the migration:
+
+```bash
+kubectl -n <namespace> exec rabbitmq-migrator-server-0 -- \
+  rabbitmqctl clear_parameter -p / shovel move-orders
+```
+
+## Operational Notes
+
+- Shovel moves messages, not full broker state.
+- A destination queue that does not exist will cause the Shovel to fail unless the chosen destination exchange and routing behavior can create the intended path.
+- Network interruptions cause reconnect attempts according to the configured reconnect delay.
+- For long-running migration jobs, monitor queue growth, consumer lag, and broker alarms on both the source and destination sides.
+
+## Related Information
+
+- [RabbitMQ Disaster Recovery with Federated Exchanges](./40-disaster-recovery-with-federated-exchanges)
+- [Manage RabbitMQ Definitions](./25-manage-definitions)
+- [RabbitMQ Shovel](https://www.rabbitmq.com/docs/shovel)
+- [Dynamic Shovel](https://www.rabbitmq.com/docs/shovel-dynamic)

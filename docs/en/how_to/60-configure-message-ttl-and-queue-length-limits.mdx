@@ -1,0 +1,80 @@
+---
+weight: 60
+---
+
+# Configure Message TTL and Queue Length Limits
+
+Use message TTL and queue length limits to keep queue growth within a controlled window. These settings are useful for burst handling, standby backlog control, and queues that should not retain stale messages forever.
+
+Prefer policies over hard-coded queue arguments when the same limits must apply to multiple queues or when you want to adjust limits without redeclaring queues.
+
+## Choose the Correct Control
+
+| Control | Use It For | Notes |
+| --- | --- | --- |
+| `message-ttl` | Expiring old messages after a defined retention window. | Messages that remain longer than the TTL become eligible for expiration. |
+| `max-length` | Limiting the number of messages in a queue. | Use when queue count growth matters more than total bytes. |
+| `max-length-bytes` | Limiting queue size by bytes. | Useful for payload-heavy workloads. |
+| `overflow` | Defining what happens when a queue hits its limit. | Choose between dropping from the head or rejecting new publishes. |
+| `expires` or `x-expires` | Expiring unused queues. | Use only for truly temporary queues, not for durable production queues that can remain idle for long periods. |
+
+<Directive type="warning" title="Do Not Confuse Queue Expiration with Message TTL">
+  Queue expiration deletes an unused queue. Message TTL expires messages. For durable application queues and warm-standby queues, use `message-ttl` for backlog control and avoid `expires` unless the queue is intentionally temporary.
+</Directive>
+
+## Apply a Queue Policy
+
+The following example applies a 24-hour message retention window and queue length limits to queues that start with `orders.` in the default virtual host:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl set_policy -p / backlog-controls \
+  '^orders\.' \
+  '{"message-ttl":86400000,"max-length":100000,"max-length-bytes":1073741824,"overflow":"reject-publish-dlx"}' \
+  --priority 20 \
+  --apply-to queues
+```
+
+In this example:
+
+- Messages older than 24 hours become eligible for expiration.
+- The queue holds at most 100000 messages.
+- The queue holds at most 1 GiB of message data.
+- New publishes are rejected after the limit is reached and can be dead-lettered if the queue is configured with a DLX.
+
+If another policy already matches the same queues, review policy priorities before creating a competing rule.
+
+## Verify the Active Policy
+
+List policies in the virtual host:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl list_policies -p /
+```
+
+Verify the queue arguments and active policy:
+
+```bash
+rabbitmqadmin \
+  --host <management-host> \
+  --port 15672 \
+  --username <admin-user> \
+  --password <admin-password> \
+  --vhost / \
+  list queues name policy arguments messages message_bytes
+```
+
+## Design Recommendations
+
+- Use `message-ttl` to bound standby or replay queues that should not grow forever.
+- Use `max-length` or `max-length-bytes` on high-volume queues so unexpected consumer outages do not exhaust disk.
+- Choose `overflow="reject-publish"` or `overflow="reject-publish-dlx"` when publishers must receive backpressure instead of silently losing the oldest messages.
+- Use `overflow="drop-head"` only when the application explicitly prefers the newest messages over the oldest backlog.
+- Review limit values against traffic peaks, expected outage windows, and available storage.
+
+## Related Information
+
+- [Configure Dead-Letter Exchanges and Retry Queues](./55-configure-dead-letter-exchanges-and-retry-queues)
+- [RabbitMQ Queue Length Limit](https://www.rabbitmq.com/docs/maxlength)
+- [RabbitMQ TTL](https://www.rabbitmq.com/docs/ttl)

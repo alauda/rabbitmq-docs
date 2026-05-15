@@ -1,0 +1,118 @@
+---
+weight: 70
+---
+
+# Check RabbitmqCluster Status
+
+Use this guide to determine whether a `RabbitmqCluster` is healthy from both the Kubernetes operator perspective and the RabbitMQ broker perspective.
+
+Kubernetes readiness alone is not enough. A Pod can be `Ready` while the broker has not joined the expected RabbitMQ cluster or while runtime alarms are active.
+
+## 1. Check the RabbitmqCluster resource
+
+Start with the custom resource:
+
+```bash
+kubectl -n <namespace> get rabbitmqcluster <instance-name> \
+  -o custom-columns='NAME:.metadata.name,PHASE:.status.phase,GENERATION:.metadata.generation,OBSERVED:.status.observedGeneration,OPERATOR:.status.operatorVersion,DEFAULT_USER:.status.defaultUser.secretReference.name'
+```
+
+Check conditions:
+
+```bash
+kubectl -n <namespace> get rabbitmqcluster <instance-name> \
+  -o jsonpath='{range .status.conditions[*]}{.type}={"status":.status,"reason":.reason}{"\n"}{end}'
+```
+
+The following status fields are the most useful for routine checks:
+
+| Field | Meaning |
+| --- | --- |
+| `status.phase` | High-level lifecycle state reported by the operator. |
+| `status.conditions` | Detailed readiness and reconciliation conditions such as `AllReplicasReady`, `ClusterAvailable`, and `ReconcileSuccess`. |
+| `status.observedGeneration` | The most recent `metadata.generation` successfully observed by the operator. |
+| `status.defaultUser.secretReference` | The generated Secret that stores the default RabbitMQ user. |
+| `status.operatorVersion` | The operator version that reconciled the cluster. |
+| `status.upgradeStatus` | Upgrade-related metadata for the cluster bundle. |
+
+## 2. Check Pods and Services
+
+List the Pods:
+
+```bash
+kubectl -n <namespace> get pods \
+  -l app.kubernetes.io/name=<instance-name>
+```
+
+Check the Service:
+
+```bash
+kubectl -n <namespace> get svc <instance-name>
+```
+
+Check endpoints:
+
+```bash
+kubectl -n <namespace> get endpoints <instance-name>
+kubectl -n <namespace> get endpoints <instance-name>-nodes
+```
+
+If a Pod is missing from the endpoints, clients or peer discovery can fail even when the Pod exists.
+
+## 3. Check broker liveness and cluster membership
+
+Verify that the broker process is running:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmq-diagnostics ping
+```
+
+Check cluster membership:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmqctl cluster_status
+```
+
+`cluster_status` must show all expected nodes in the broker cluster. If a Pod is `Ready` but `cluster_status` does not show the corresponding broker node, investigate cluster formation before you declare the instance healthy.
+
+## 4. Check listeners, alarms, and runtime status
+
+Check listeners:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmq-diagnostics listeners
+```
+
+Check runtime status:
+
+```bash
+kubectl -n <namespace> exec <instance-name>-server-0 -- \
+  rabbitmq-diagnostics status
+```
+
+Pay attention to:
+
+- Memory high watermark usage
+- Free disk space alarms
+- Connection and queue totals
+- Enabled plugins
+- Listener ports that match your access method and TLS expectations
+
+## 5. Check logs when status is unclear
+
+If the resource or broker checks disagree, inspect the operator and broker logs:
+
+```bash
+kubectl -n <namespace> logs <instance-name>-server-0
+```
+
+For platform-specific log guidance, see [Log View](../functions/80-log).
+
+## Related Information
+
+- [Troubleshoot RabbitMQ](./75-troubleshoot-rabbitmq)
+- [Monitoring and Alerts](../functions/75-monitor)
+- [RabbitMQ Monitoring Guide](https://www.rabbitmq.com/docs/monitoring)
