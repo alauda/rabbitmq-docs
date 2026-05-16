@@ -1,0 +1,27 @@
+project_name: "Alauda Streaming Service for RabbitMQ Documentation"
+summary: "User documentation for Alauda Streaming Service for RabbitMQ — a Kubernetes-native managed RabbitMQ built on the upstream RabbitMQ Cluster Kubernetes Operator with security hardening, feature extensions, and Alauda Container Platform integration."
+body: |
+  Covers RabbitMQ concepts, architecture, installation on Kubernetes, day-2
+  operations (upgrade, TLS, user/vhost/permission management, definitions,
+  blue-green upgrade, disaster recovery, dead-letter exchanges, message TTL,
+  Shovel migration, troubleshooting), in-product workflows (creating
+  instances, parameters, access methods, monitoring, scheduling, logs,
+  start/stop/restart), the RabbitmqCluster Kubernetes API reference, and
+  lifecycle/release information.
+
+include_patterns:
+  - "docs/**/*.md"
+  - "docs/**/*.mdx"
+
+exclude_patterns:
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/.llmstxt-cache/**"
+  - "**/llms.txt"
+  - "**/llmstxt-state.json"
+  - "**/CHANGELOG.md"
+  - "**/CONTRIBUTING.md"
+
+grouping_base_path: "docs/en"
+batch_size: 15
+description_max_words: 150

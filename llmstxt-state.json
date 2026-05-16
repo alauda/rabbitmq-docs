@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "generator_version": 3,
+  "project_name": "Alauda Streaming Service for RabbitMQ Documentation",
+  "summary": "User documentation for Alauda Streaming Service for RabbitMQ — a Kubernetes-native managed RabbitMQ built on the upstream RabbitMQ Cluster Kubernetes Operator with security hardening, feature extensions, and Alauda Container Platform integration.",
+  "generated_at": "2026-05-16T09:49:19Z",
+  "include_patterns": [
+    "docs/**/*.md",
+    "docs/**/*.mdx"
+  ],
+  "exclude_patterns": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/.llmstxt-cache/**",
+    "**/llms.txt",
+    "**/llmstxt-state.json",
+    "**/CHANGELOG.md",
+    "**/CONTRIBUTING.md",
+    ".llmstxt-cache/**",
+    "llms.txt",
+    "llmstxt-state.json"
+  ],
+  "grouping_base_path": "docs/en",
+  "description_max_words": 150,
+  "files": {
+    "docs/en/apis/index.mdx": {
+      "sha256": "e7c683b399b862f1bf32d3abeb6e2428d0930a46546c61b026cbd2ad15229ace",
+      "size": 110,
+      "description": "Container landing page for the API Reference section, rendered through the `<Overview>` MDX component with no headings of its own. Routes readers into the Kubernetes APIs subtree where the RabbitmqCluster CRD reference lives.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/apis/kubernetes_apis/index.mdx": {
+      "sha256": "ebe03bb74e65b7373cd4b99e4283b3e55fc1bbb036530c98622192133486b5d8",
+      "size": 112,
+      "description": "Index page for the Kubernetes APIs grouping under the API Reference; renders an `<Overview>` listing that links into the RabbitMQ CRD subsection.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/apis/kubernetes_apis/rabbitmq/index.mdx": {
+      "sha256": "d7c623db9f62602420a0ae8a242891f3a900277dc136cec27be1aa36fea42f65",
+      "size": 108,
+      "description": "Section landing page for the RabbitMQ Kubernetes APIs grouping; uses the `<Overview>` MDX component to enumerate the individual CRD reference pages (e.g., the RabbitmqCluster resource) that follow.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/apis/kubernetes_apis/rabbitmq/rabbitmq.mdx": {
+      "sha256": "5a326724a33e74c5330b6648a803075f17a7d015624b20d630627c1c73a3a413",
+      "size": 111,
+      "description": "Auto-generated CRD reference page for the `rabbitmqclusters.rabbitmq.com` custom resource, rendered by the `<K8sCrd>` component. Surfaces the full `RabbitmqCluster` schema (apiVersion `rabbitmq.com/v1beta1`) including spec fields such as replicas, resources, persistence, rabbitmq.additionalConfig, service, affinity, and upgradeOption, and its status subresource (phase, defaultUser.secretReference, etc.).",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/architecture.mdx": {
+      "sha256": "0885ceed823d97726db3feb892f8c5f44d13132b1fa3f1ef3a9edd32a3d783bd",
+      "size": 2153,
+      "description": "Walks through the RabbitMQ message-queue architecture and the role of each component (Producers, Exchange, Message Queues, Consumers, and the Broker), including how routing keys move messages from producers through exchanges into queues for FIFO consumption. Notes supported messaging patterns (point-to-point, publish/subscribe, request/reply) and broker features such as flexible routing, persistent storage, reliable delivery, and message prioritization, and points to the Core Concepts page for component-level details.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/concepts.mdx": {
+      "sha256": "7d3aab7e771e57f96bb97999efa3ec19e5740ee5b5d098d11a3ae5220a12dc40",
+      "size": 5339,
+      "description": "Reference for the AMQP 0-9-1 building blocks used by Alauda Streaming Service for RabbitMQ: the four exchange types (Direct, Fanout, Topic, Headers, including the `x-match` header parameter for any/all matching), Queue properties (Name, Durable, Exclusive, Auto-delete, Arguments such as TTL or length limits) and queue declaration semantics including the channel-level 406 PRECONDITION_FAILED error, and Bindings with routing-key filters that route messages from an exchange to a queue.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/10-create-instance.mdx": {
+      "sha256": "e4cf4b949972b5cbad48e07ffe7802ba3f594560fc4d4a670a0853657e50938e",
+      "size": 8549,
+      "description": "Step-by-step walkthrough for provisioning a `RabbitmqCluster` instance via CLI or Web Console. The CLI example posts a full `apiVersion: rabbitmq.com/v1beta1` manifest with podAntiAffinity, persistence (storage + storageClassName), a long `rabbitmq.additionalConfig` block (channel_max, heartbeat, vm_memory_high_watermark.relative, raft.wal_max_size_bytes, etc.), 3 replicas, CPU/memory requests/limits, ClusterIP service, autoUpgrade false, and version 3.12. Documents phase values (`Creating`, `Updating`, `Active`, `Failed`, `Unknown`, `Paused`), the `<instance>-default-user` secret, and Web Console parameter tables for Parameter Template, Storage Class, host port, Node Labels and Pod Tolerations (Equal/Exists, NoExecute).",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/15-delete-instance.mdx": {
+      "sha256": "d4d4ad670765313d9698e2496ae0196a70e371d9aa9904d31dd846db6329c183",
+      "size": 1700,
+      "description": "Describes how deleting a `RabbitmqCluster` cascades to the StatefulSet, Service, ConfigMap, Secret, and PersistentVolumeClaim it owns, with both CLI and Web Console procedures. Shows the `kubectl delete rabbitmqclusters` command, a follow-up `kubectl delete pvc -l app.kubernetes.io/component=rabbitmq,...` to release retained PVCs, and the Web Console flow with a Delete Persistent Volume Claim checkbox plus a name-confirmation dialog.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/20-user.mdx": {
+      "sha256": "dc18a9b398a1618455eda275d732dd0e7b1906bac99294e6a0ea6d4ddbae069b",
+      "size": 2017,
+      "description": "Explains why the upstream `guest` user is disabled on the platform and how Alauda Streaming Service for RabbitMQ instead ships a randomly generated admin account stored in the `<Instance name>-default-user` Opaque Secret (with `username`, `password`, `default_user.conf`, `provider`, `type` keys). Provides `kubectl get secret ... -o jsonpath='{.data.username}' | base64 -d` commands to retrieve credentials and warns that the read-only secret must not be edited directly, with an Alauda Container Platform Web Console alternative.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/30-parameter.mdx": {
+      "sha256": "39e31d436c52a92da4279ef1dc4adc94664d4ec1dfc0a7ebd75d4c3f39c58c75",
+      "size": 21996,
+      "description": "Walks through updating broker parameters either via the web console Parameter tab or by patching `spec.rabbitmq.additionalConfig` on the RabbitmqCluster CR, and warns that parameter changes trigger an instance restart. Includes a reference table for tunables such as `channel_max`, `heartbeat`, `vm_memory_high_watermark.relative`, `disk_free_limit.absolute`, `cluster_partition_handling`, `queue_master_locator`, `mirroring_sync_batch_size`, and Mnesia retry limits, with default values and valid value ranges.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/40-accessmethod.mdx": {
+      "sha256": "15b52a2ff7f9296006f521454bcf3d5da9cdb4646fa874eca8f58088bc42e728",
+      "size": 1610,
+      "description": "Explains the two RabbitMQ connection address families exposed by the platform: in-cluster access via the internal DNS name or routing IP for Kubernetes-internal clients, and out-of-cluster access via NodePort or LoadBalancer for clients in other clusters. Points to the Client Access how-to for publishing/consuming examples and to the management portal guide for using the RabbitMQ web UI.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/50-update.mdx": {
+      "sha256": "0c0df28ceb43c2ddfe6669bdaa9711a199a19f642992f6b2cf061181e13bfe38",
+      "size": 1314,
+      "description": "Describes how to vertically and horizontally scale a RabbitMQ instance from the web console's Update Specification action, including replica counts and CPU/memory limits. Calls out the constraint that replica changes must respect existing scheduling configuration, recommends scaling all nodes to identical specs for cluster reliability, and warns that under- or over-provisioning resources can prevent the instance from starting.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/60-scheduling.mdx": {
+      "sha256": "163fb759899c65e1801a428181d53a316d4d69d6b78d3e8c8fb45d489588cd15",
+      "size": 1801,
+      "description": "Documents how Alauda Streaming Service for RabbitMQ supports live updates to Pod scheduling (node labels, tolerations, affinity rules) without service disruption when node taints change. Stresses that Pod migration is not supported during a scheduling update, so the new node selection must still include every node currently hosting a replica, and the number of matching nodes must be at least the replica count.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/75-monitor.mdx": {
+      "sha256": "62f55be68ef22cb0ff58790e39b4533eea4706a184ef0fc7a1edbcf3cf8d9413",
+      "size": 5288,
+      "description": "Outlines the monitoring approach for RabbitMQ instances using platform dashboards plus the broker's Prometheus exporter on port 15692 (verified via `rabbitmq-diagnostics listeners`), and groups key signals into categories such as RabbitmqCluster availability, connections/channels, publish-delivery rates, queue backlog (`messages_ready`, `messages_unacknowledged`), memory and disk alarms, file descriptors, and plugin listeners. Provides recommended alert thresholds (e.g. memory/storage >80% for 30s) and an interpretation table mapping symptoms like sharp connection-count swings or active disk/memory alarms to suggested operator follow-up.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/80-log.mdx": {
+      "sha256": "5be4744266f4dbb1f7653f40ad040486dfba3b9599933afb59881de7c306d42d",
+      "size": 744,
+      "description": "Shows how to inspect container-level RabbitMQ logs through the web console's Realtime Log tab on the instance detail page, including filtering by individual Pod and exporting the rendered log to a file. Intended for debugging broker errors and runtime exceptions on a specific replica.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/85-start-stop.mdx": {
+      "sha256": "037e5f6829a8acd140ca2132166f0149d0209681b85aafe0c4505c91b3882c2f",
+      "size": 1610,
+      "description": "Covers the one-click Stop and Start actions for a RabbitMQ instance from the console, used to temporarily free CPU and memory in planned-downtime, overloaded, or dev/test scenarios without deleting the instance. Lists the prerequisite phase for each action (Stop requires Processing/Running/Abnormal/Unknown; Start requires Stopping/Stopped) and notes that while stopped the Actions menu, parameter updates/exports, and inspection results are unavailable.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/90-restart.mdx": {
+      "sha256": "7b7c8ad2e4420b72d73083178efa78010b8cb9997c4aebea319bc7cdd7444115",
+      "size": 1040,
+      "description": "Explains how to trigger a rolling restart of a RabbitMQ instance from the console's Actions > Restart menu to recover from operational failures, runaway connections, or transient anomalies, noting that Pods restart one by one and may cause brief service interruption. Requires the instance to be in Running state and warns that Processing/Error instances will auto-restart after health-check timeout.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/functions/index.mdx": {
+      "sha256": "3e56afcf087473200fd5f2f0c38374ee4116be30c121de7c7af894eae239848f",
+      "size": 83,
+      "description": "Landing page for the Guides (功能指南) section of the Alauda Streaming Service for RabbitMQ documentation, rendering an auto-generated Overview component that links to the child function topics (parameter, access, update, scheduling, monitoring, logging, start/stop, restart).",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/10-access.mdx": {
+      "sha256": "21330aa2963de4fb1c424edce125181b1eff3262effbe8d3703d27eafaf9318a",
+      "size": 5518,
+      "description": "Provides end-to-end producer examples for connecting business applications to a RabbitMQ instance from Java (using `com.rabbitmq.client.ConnectionFactory`, address lists, automatic recovery, vhost selection, and `exchangeDeclare`/`queueDeclare`/`basicPublish`) and Python (using `pika.BlockingConnection` with multiple `ConnectionParameters` endpoints, `basic_consume`, and recovery loops around `ConnectionClosedByBroker` and `AMQPConnectionError`). Cross-references the access-address and user-management pages for obtaining the IPs, ports, and credentials substituted into the snippets.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/15-secure-client-connections-with-tls.mdx": {
+      "sha256": "062409392879deb445c1359f7c77d25ca7b0cd29a8226405b51f9ecd79fed3b3",
+      "size": 5922,
+      "description": "Step-by-step procedure for enabling TLS on RabbitMQ listeners by creating a `kubectl create secret tls` server-cert secret (and optional private CA secret), then setting `spec.tls.secretName`, `spec.tls.caSecretName`, and `spec.tls.disableNonTLSListeners` on the RabbitmqCluster. Includes verification with `rabbitmq-diagnostics listeners`, `amqps://` URI construction with URL-encoded vhost, `rabbitmqadmin --ssl` examples, plus a troubleshooting table for SAN mismatches, unknown-CA errors, and broken management tooling after non-TLS listeners are disabled.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/20-manage-users-vhosts-and-permissions.mdx": {
+      "sha256": "7e4674925a2caf24c5b7261a350a77ad6a07a7494861b8618a5761f3be2a753a",
+      "size": 4983,
+      "description": "Procedure for creating per-application virtual hosts and users with least-privilege RabbitMQ permissions, contrasted against reusing the platform-generated admin account. Walks through `rabbitmqadmin declare vhost/user/permission` and equivalent `rabbitmqctl add_vhost/add_user/set_permissions`/`set_topic_permissions` commands run via `kubectl exec`, explains the configure/write/read regex permission model and the `administrator` tag, and recommends storing application passwords in Kubernetes Secrets and rotating them when applications are decommissioned.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/25-manage-definitions.mdx": {
+      "sha256": "6eb1f8883187db8bb2bcfd75163b146a15928ef1744982d6e8c4557ceafa66d3",
+      "size": 6101,
+      "description": "Explains how to export and import RabbitMQ definitions (virtual hosts, users, permissions, exchanges, queues, bindings, policies, runtime/operator parameters) using `rabbitmqadmin export/import` or `rabbitmqctl export_definitions`/`import_definitions` via `kubectl exec`, with separate guidance for cluster-wide versus vhost-scoped exports. Stresses that definitions are not a message backup, lists what to scrub from a file before importing into another environment (upstream URIs, environment-specific users, password hashes), and provides post-import verification queries for exchanges, queues, bindings, vhosts, users, and permissions.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/30-upgrade.mdx": {
+      "sha256": "bcbd1997612b2979aab00a9a37570f81afd491104173108a1f3f6528edee3643",
+      "size": 1990,
+      "description": "Covers RabbitMQ patch-version (minor) upgrades through the web console, including choosing a Manual or Automatic Patch Version Upgrade Policy, performing a single-instance Upgrade Now from the instance detail page after an upgrade icon appears, and Bulk Upgrade from the Upgrade Management page (requires platform administrator rights). Notes that Pods restart one by one and may cause brief service interruption, so an off-peak window is recommended.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/40-blue-green-upgrade.mdx": {
+      "sha256": "e100ae854ab7544225cf0b90f3c2261c6c639d98db47d717221036e28715cacc",
+      "size": 13168,
+      "description": "Migration playbook for major-version upgrades (RabbitMQ 3.12.x to 4.2.x) that cannot be done in place, offering two strategies: a simple Drain & Migrate flow (stop producers, drain consumers, export/import definitions, redeploy) for tolerable downtime, and a zero-downtime Blue-Green Upgrade using the `rabbitmq_federation` plugin. The federation flow gives full kubectl/rabbitmqctl commands for provisioning the green RabbitmqCluster with `additionalPlugins: rabbitmq_federation`/`rabbitmq_federation_management`, copying definitions between Pods, configuring a `federation-upstream` parameter and policy pointing back to blue, migrating consumers then producers, optionally accelerating drain with `rabbitmq_shovel`, and decommissioning the blue cluster; includes a 10-row verification checklist and rollback steps for each migration phase.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/40-disaster-recovery-with-federated-exchanges.mdx": {
+      "sha256": "a1c57917a4c380e6f4197dbeea189d8eefcd0d7695f2b0886bab9408cb05329a",
+      "size": 27516,
+      "description": "Walks through a warm-standby disaster recovery pattern that uses the `rabbitmq_federation` plugin to replicate selected message flows from a `rabbitmq-primary` upstream exchange (`app.events`) to a `rabbitmq-dr` downstream exchange (`app-events-dr`) via `federation-upstream` parameters and policies set with `rabbitmqctl set_parameter`/`set_policy`. Covers enabling federation plugins through `spec.rabbitmq.additionalPlugins`, seeding DR-side topology via `rabbitmqadmin export`/`import` of definitions, bounding the standby backlog with a `message-ttl` queue policy (warning against `expires`), tuning `max-hops` and `reconnect-delay`, and verifying replication with `rabbitmqctl federation_status`. Documents what federation does not guarantee (no RPO=0, no synchronous HA, no auto-sync of users/permissions/secrets) and includes troubleshooting for missing plugins, missing DR definitions, broken upstream links, and duplicate messages.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/45-fail-over-and-fail-back-a-rabbitmq-workload.mdx": {
+      "sha256": "c040204d20b610a4452878590487b0cc04aaab75263fdf2910206b2d1cc37f4f",
+      "size": 5994,
+      "description": "Application-side runbook for planned failover, unplanned failover, and failback between a primary RabbitMQ cluster and a prepared standby site, intended to complement DR mechanisms like federated exchanges or Shovel rather than replace them. Prescribes the order of operations (drain producers, verify standby topology and `RabbitmqCluster` phase, switch consumers before producers, then verify message flow and alarms), and for failback covers strategies for draining the standby backlog before cutting traffic back. Provides a verification checklist tying `status.conditions`, `rabbitmqctl cluster_status`, user/permission presence, queue/binding readiness, and clear memory/disk alarms to safe cutover.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/50-use-shovel-for-message-migration.mdx": {
+      "sha256": "ac57839424547607d729488c4f010af54c7ff454a2c107a44007054331df1b8d",
+      "size": 5134,
+      "description": "Explains how to use the `rabbitmq_shovel` (and optional `rabbitmq_shovel_management`) plugin for queue-to-queue migration, controlled replay, or backlog movement during planned cutovers, as opposed to exchange-based federation. Provides a complete dynamic Shovel example created with `rabbitmqctl set_parameter -p / shovel move-orders` using `src-uri`/`dest-uri`, `src-queue`/`dest-queue`, `ack-mode: on-confirm`, `reconnect-delay`, and `delete-after: never`, plus verification via `rabbitmqctl shovel_status` and `rabbitmqadmin list queues`, and teardown with `rabbitmqctl clear_parameter`. Emphasizes that Shovel moves messages only, not users, permissions, vhosts, or topology, which must be prepared separately.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/55-configure-dead-letter-exchanges-and-retry-queues.mdx": {
+      "sha256": "2dc21adf41bd49d2722926c3b49c48bc085770ff2282001ba8cc73499d467363",
+      "size": 6434,
+      "description": "Builds an end-to-end dead-letter and delayed-retry topology around an `orders.work` direct exchange, `orders.q` work queue (with `x-dead-letter-exchange: orders.dlx` and `x-dead-letter-routing-key: orders.failed` arguments), and `orders.dlq` for permanent failures. Adds a 30-second retry path via `orders.retry` plus `orders.retry.30s` queue that uses `x-message-ttl: 30000` and dead-letters back to `orders.work`, declared with `rabbitmqadmin declare` commands. Discusses application-side decisions (publisher confirms before acking the original delivery, idempotent consumers, using the `x-death` header or quorum queue delivery limits for retry counts) and warns against `basic.nack`/`requeue=true` redelivery loops.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/60-configure-message-ttl-and-queue-length-limits.mdx": {
+      "sha256": "3d4ab4386851acd36cf7d34332c7a5f6c8ca51fe7e794773153291a59058e51d",
+      "size": 3691,
+      "description": "Reference for bounding queue growth using `message-ttl`, `max-length`, `max-length-bytes`, and `overflow` (`reject-publish`, `reject-publish-dlx`, `drop-head`), with a clear warning to use `message-ttl` rather than `expires`/`x-expires` for durable warm-standby queues that may sit idle. Demonstrates applying a policy named `backlog-controls` with `rabbitmqctl set_policy -p / backlog-controls '^orders\\.' '{\"message-ttl\":86400000,\"max-length\":100000,\"max-length-bytes\":1073741824,\"overflow\":\"reject-publish-dlx\"}' --priority 20 --apply-to queues`, and verifying via `rabbitmqctl list_policies` and `rabbitmqadmin list queues name policy arguments messages message_bytes`.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/65-client-connection-recovery-and-failover.mdx": {
+      "sha256": "6f7f4fcd98667e59bdce3c6eedf377d3c7218899a7863665f155e6a1f37c8c80",
+      "size": 4857,
+      "description": "Hardening guide for RabbitMQ client applications covering multi-address endpoint lists, separate producer/consumer connections, heartbeats, automatic recovery, publisher confirms, manual ack with idempotency, and treating site-level DR failover as a configuration change. Includes a Java `ConnectionFactory` example using `setAutomaticRecoveryEnabled`, `setTopologyRecoveryEnabled`, `setNetworkRecoveryInterval`, `setRequestedHeartbeat`, and `Address[]` failover list, plus a `pika` Python example with a manual reconnect loop, `basic_qos(prefetch_count=50)`, and `basic_nack(requeue=True)` on processing exceptions. Compares endpoint strategies (multi-address client, Kubernetes Service/LoadBalancer, primary/DR config switch) and provides a post-change verification checklist.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/70-check-rabbitmqcluster-status.mdx": {
+      "sha256": "7e4875195b805555e1577e62195fd98ada26d0db7b1183c7d6eee46f5697b0cd",
+      "size": 3586,
+      "description": "Health-check playbook that separates Kubernetes operator state from broker-level state for a `RabbitmqCluster` resource. Uses `kubectl get rabbitmqcluster ... -o custom-columns` to inspect `status.phase`, `status.observedGeneration`, `status.defaultUser.secretReference`, `status.operatorVersion`, and `status.upgradeStatus`, then `jsonpath` to surface `status.conditions` such as `AllReplicasReady`, `ClusterAvailable`, and `ReconcileSuccess`. Adds Pod/Service/Endpoints checks, broker-side `rabbitmq-diagnostics ping`, `rabbitmqctl cluster_status`, `rabbitmq-diagnostics listeners`, and `status` to validate memory high watermark, disk alarms, connection totals, enabled plugins, and listener TLS, and links to operator and broker logs when checks disagree.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/75-troubleshoot-rabbitmq.mdx": {
+      "sha256": "d312d50501ae196c57764b63722ce14315a3adf02ed4a671108649d67ee6c7cd",
+      "size": 5672,
+      "description": "Symptom/impact/cause/checks/recommendation matrix for common RabbitMQ failures: Pods running but cluster unhealthy (peer discovery, split membership), authentication and permission denials, TLS handshake or SAN/CA failures, blocked or slow publishing from memory/disk alarms or backlog, queues growing beyond consumer throughput, stuck version upgrades or Shovel migrations, and unavailable management API/UI. Each row pins concrete diagnostic commands such as `rabbitmqctl cluster_status`, `rabbitmqadmin list users`/`list vhosts`/`list permissions`, `rabbitmq-diagnostics listeners`/`status`, `rabbitmq-plugins list -e`, and `rabbitmqctl shovel_status` to a remediation, and cross-links the DLQ/TTL and TLS how-to guides.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/index.mdx": {
+      "sha256": "37f1ead8d088f993d026018697a91eb6061d8589a9a47bda9133829cc1b0a60b",
+      "size": 82,
+      "description": "Section landing page for the English HowTo collection of Alauda Streaming Service for RabbitMQ, rendering an `<Overview />` component that surfaces the operational task guides (access, TLS, definitions management, DR with federation, failover/failback, Shovel migration, DLQ/retry, TTL/length limits, client recovery, cluster status, troubleshooting, and plugin operations). Carries the Chinese localization title `实用指南` and a weight of 60 for navigation ordering.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/plugin/50-managementui.mdx": {
+      "sha256": "c0f55f5514ce6c78dc78f34a3bfcc1f5d210523f3bf9d66f1e4f608e8d945351",
+      "size": 3607,
+      "description": "Walks through obtaining the RabbitMQ Management UI access address for both instances without external cluster access (where an operator adds a management port through the **Client > Add management port** flow, configuring a load balancer, listening port, internal routing group, and source-address-hash session persistence) and instances with external access enabled (using the **Access Method > Management Portal Address** link). Then steps through basic UI operations: creating an exchange under **Exchanges > Add a new exchange**, creating a queue (with a tip to set `x-message-ttl=3600000` to avoid PVC pressure), binding a queue with a routing key, publishing messages via **Publish message**, and consuming via **Get messages**.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/how_to/plugin/index.mdx": {
+      "sha256": "09a0c8de1eb239d0b6055335604bdfcc867d0bd4d0206f5fd6d662c03317f7ff",
+      "size": 14956,
+      "description": "Catalog and operating instructions for the RabbitMQ plugin set bundled with Alauda Streaming Service images, listing the defaults (`rabbitmq_peer_discovery_k8s`, `rabbitmq_prometheus`, `rabbitmq_management`) and describing each included plugin from `rabbitmq_amqp1_0` and the `rabbitmq_auth_backend_*` family through `rabbitmq_federation`, `rabbitmq_shovel`, `rabbitmq_mqtt`/`rabbitmq_web_mqtt`, `rabbitmq_stomp`/`rabbitmq_web_stomp`, `rabbitmq_stream`, `rabbitmq_delayed_message_exchange`, `rabbitmq_trust_store`, and others. Explains enabling bundled plugins through `spec.rabbitmq.additionalPlugins`, and shows two patterns for adding custom or community plugins (an internet-connected initContainer that `curl`-downloads `.ez` files into an `emptyDir` mounted at `/opt/rabbitmq/community-plugins`, and an air-gapped hostPath-based approach), with `RABBITMQ_PLUGINS_DIR` set in `envConfig` and cross-version upgrade compatibility warnings.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/index.mdx": {
+      "sha256": "31a0125363af9bfae0600d518245b18b9e12c0500f59696b84f44b0f57756ebb",
+      "size": 124,
+      "description": "Top-level navigation landing page for the English documentation set, rendered via the `<Overview>` MDX component with no static headings; serves as the entry point that lists the doc sections (Introduction, Install, Architecture, Concepts, Functions, APIs, etc.).",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/installation.mdx": {
+      "sha256": "47677bfff70e5d2f77cd81b3962a97489b2f12f660ba261fc57d76ffbb09346b",
+      "size": 4652,
+      "description": "Sequential install guide for Alauda Streaming Service for RabbitMQ and its two optional Web Console dependencies: Alauda Container Platform Data Services Essentials (pushed to the `global` cluster via Marketplace > Cluster Plugins) and Alauda Container Platform Data Services RDS Framework (installed from OperatorHub). Documents the per-component prerequisites, the OperatorHub install parameters (Channel, Version, Installation Mode = Cluster, Recommended Namespace, Manual upgrade strategy), and notes that CLI-only environments can skip both Web Console packages.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/intro.mdx": {
+      "sha256": "c46438f2c2fda9468677921af8b1a1ef02eae6ba30fa15182fd6f30cb2dd5218",
+      "size": 2025,
+      "description": "Introduces RabbitMQ as an open-source AMQP message broker for decoupled, asynchronous communication, then positions Alauda Streaming Service for RabbitMQ as a hardened distribution built on the upstream RabbitMQ Cluster Kubernetes Operator. Lists its key cloud-native capabilities: automated declarative deployment, Operator-driven scaling/upgrade/fault recovery, centralized configuration management, Prometheus metrics with built-in dashboards and alerts, and tight integration with Kubernetes primitives such as Service, StatefulSet, and PersistentVolumeClaim.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/lifecycle_policy.mdx": {
+      "sha256": "88b515db7d82f7b618d87a4c53ff5ff2c7ffafd69aceb9ebf6a66481f7e02336",
+      "size": 1541,
+      "description": "Defines the support lifecycle for Alauda Streaming Service for RabbitMQ releases, with v4.1.x released 2025-08-18 supported until one month after the next version ships. Describes the rolling support model (independent major-version lifecycles, minor versions supported until next-minor +1 month) and the maintenance commitments Alauda provides: security updates, bug fixes aligned with upstream RabbitMQ, upgrade assistance, and periodic operator maintenance.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/release_notes.mdx": {
+      "sha256": "8a8d09a30e9de5c6fce12f34aee093c8b405ff343d307434f25ae5fc979c53b2",
+      "size": 1020,
+      "description": "Per-version changelog for Alauda Streaming Service for RabbitMQ. v4.1.0 lists stability improvements and security fixes; v4.0.0 covers component-platform lifecycle decoupling (so the RabbitMQ team can ship fixes without waiting for the platform release), real-time logs on the component details page, and added support for RabbitMQ server v3.12.14, with placeholders for fixed and known issue tables.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    },
+    "docs/en/upgrade.mdx": {
+      "sha256": "f0e8a6ec4a67f3747bddd4fde6e3dd2ac7a2181febf549cbae0f02297df0e5ac",
+      "size": 2044,
+      "description": "Upgrade-path reference for Alauda Streaming Service for RabbitMQ, including the compatibility matrix (v4.1.x and v4.0.x support RabbitMQ 3.8.16 and 3.12.x on Kubernetes 1.25+), prerequisites (supported source version, `Ready` clusters with healthy pods, sufficient resources), the recommended consecutive minor-version upgrade pattern, fully compatible patch-level upgrades, RabbitMQ version alignment per the matrix, and the Automatic vs Manual upgrade strategies the operator can apply.",
+      "generation_method": "ai_agent_reading",
+      "updated_at": "2026-05-16T09:49:19Z"
+    }
+  }
+}
