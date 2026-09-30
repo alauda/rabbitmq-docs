@@ -7,6 +7,30 @@ i18n:
 title: Release Notes
 ---
 
+## v4.3.3
+
+### New and Optimized Features
+
+#### Product Renamed
+
+- The product is now named **Alauda Data Services Message Broker E1** (formerly Alauda Streaming Service for RabbitMQ). Technical identifiers are unchanged: the CRD group `rabbitmq.com`, the `RabbitmqCluster` kind, the package name, and image paths. Existing instances need no changes.
+
+#### Platform Compatibility
+
+- The same v4.3.3 plugin is released for ACP 4.1, 4.2, 4.3, and 4.4.
+- Supported RabbitMQ versions: 3.12, 4.2, and 4.3.
+
+#### Unsupported Versions Are Reported
+
+- If `spec.version` names a RabbitMQ version this release does not ship, the operator no longer silently runs the default image. It sets the `ReconcileSuccess` condition to `False` with reason `UnsupportedRabbitmqVersion`, emits a Warning event with the same reason, and leaves the instance unchanged until `spec.version` is corrected.
+
+### Fixed Issues
+
+- Fixed the default user password change not taking effect after updating the default user Secret. This behavior was lost in v4.3.1.
+- Fixed TLS certificates not being provisioned automatically for instances with TLS enabled. This behavior was lost in v4.3.1.
+- The operator now uses `Lease` objects for leader election.
+- Fixed high-severity security vulnerabilities in the operator, broker, and exporter images by updating the Alpine base image (OpenSSL), the Go toolchain (1.26.6 for the operator), and Go dependency modules.
+
 ## v4.3.1
 
 ### New and Optimized Features

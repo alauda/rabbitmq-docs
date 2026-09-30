@@ -8,15 +8,16 @@ i18n:
 # Upgrade
 
 :::note
-This document provides the upgrade path principles and supported version compatibility for Alauda Streaming Service for RabbitMQ.
+This document provides the upgrade path principles and supported version compatibility for Alauda Data Services Message Broker E1.
 :::
 
 ## Compatibility Matrix
 
-The table below lists supported versions of the Alauda Streaming Service for RabbitMQ :
+The table below lists supported versions of the Alauda Data Services Message Broker E1:
 
-| Alauda RabbitMQ Version |  RabbitMQ Versions  | Kubernetes Versions |
+| Plugin Version          |  RabbitMQ Versions  | Kubernetes Versions |
 |:-----------------------:|:-------------------:|:-------------------:|
+| v4.3.x                  |  3.12.x, 4.2.x, 4.3.x | 1.25+             |
 | v4.2.x                  |  3.12.x, 4.2.x      | 1.25+               |
 | v4.1.x                  |  3.8.16, 3.12.x     | 1.25+               |
 | v4.0.x                  |  3.8.16, 3.12.x     | 1.25+               |
@@ -58,7 +59,7 @@ For version-specific changes, new features, and deprecations, see the 📝 **[Re
 
 ## Upgrade strategy
 
-Alauda Streaming Service for RabbitMQ will execute upgrades based on the configured upgrade strategy:
+Alauda Data Services Message Broker E1 will execute upgrades based on the configured upgrade strategy:
 
 * **Automatic** : Auto-upgrades are triggered immediately upon detecting new component versions.
 * **Manual** : Requires manual approval before initiating the upgrade process.
