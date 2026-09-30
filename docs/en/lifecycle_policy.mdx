@@ -12,18 +12,22 @@ Below is the lifecycle schedule for released versions of the Alauda Data Service
 |:--------------------:|:------------:|:--------------------:|
 | v4.1.x               | 2025-08-18   | Supported until 1 month post-release of the next version   |
 | v4.2.x               | 2026-05-18   | Supported until 1 month post-release of the next version   |
-| v4.3.x               | 2026-09-30   | Supported until 1 month post-release of the next version   |
+| v4.3.x               | 2026-09-30   | 2028-03-30 (18 months from v4.3.3 GA)                      |
 
 ## Release Policy
 
-The Alauda Data Services Message Broker E1 follows a **rolling support model**:
+Starting with v4.3.3, the Alauda Data Services Message Broker E1 follows this lifecycle:
 
-- The life cycles of different major versions are independent of each other, and there may be multiple major versions in maintenance simultaneously.
-- Each minor version remains supported **until the next minor version is officially released plus 1 month**. This is done by releasing patches that apply to each supported minor version.
+- **Support window**: each minor version (for example, v4.3.x) receives Full Support followed by Maintenance for **18 months from its general availability (GA) date**. Monthly patch releases within a minor version do not extend its support window. For v4.3.x, the window is counted from the v4.3.3 GA on 2026-09-30.
+- **Patch releases**: security (CVE) and bug fixes are rolled up into a monthly patch release. Critical fixes are released on an expedited schedule.
+- **Long-life releases**: minor versions designated as long-life receive backported security (CVE) and urgent bug fixes for up to **36 months** from GA, without requiring an upgrade. v4.3.x is not currently designated as a long-life release.
+- **Update delivery**: updates are delivered through Alauda Cloud (AC) channels and are applied automatically or after approval by a cluster administrator.
+
+Versions released before v4.3.3 keep the support terms shown for them in the table above.
 
 ## Maintenance Policy
 
-Alauda provides maintenance support for the Alauda Data Services Message Broker E1 based on its rolling support model.
+Alauda provides maintenance support for the Alauda Data Services Message Broker E1 based on the lifecycle described above.
 
 During the support period of each version, Alauda provides the following services:
 
