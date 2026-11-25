@@ -276,11 +276,11 @@
       "updated_at": "2026-05-16T09:49:19Z"
     },
     "docs/en/installation.mdx": {
-      "sha256": "47677bfff70e5d2f77cd81b3962a97489b2f12f660ba261fc57d76ffbb09346b",
-      "size": 4652,
+      "sha256": "e221487418997b95e911803bbaf7fbd5a51badbe3c04012ada6e1e8b08d74f36",
+      "size": 4647,
       "description": "Sequential install guide for Alauda Streaming Service for RabbitMQ and its two optional Web Console dependencies: Alauda Container Platform Data Services Essentials (pushed to the `global` cluster via Marketplace > Cluster Plugins) and Alauda Container Platform Data Services RDS Framework (installed from OperatorHub). Documents the per-component prerequisites, the OperatorHub install parameters (Channel, Version, Installation Mode = Cluster, Recommended Namespace, Manual upgrade strategy), and notes that CLI-only environments can skip both Web Console packages.",
       "generation_method": "ai_agent_reading",
-      "updated_at": "2026-05-16T09:49:19Z"
+      "updated_at": "2026-11-23T19:15:17Z"
     },
     "docs/en/intro.mdx": {
       "sha256": "c46438f2c2fda9468677921af8b1a1ef02eae6ba30fa15182fd6f30cb2dd5218",
