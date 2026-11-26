@@ -15,7 +15,7 @@ Before you fail over a workload, make sure that the following conditions are met
 1. The standby environment has the required virtual hosts, users, permissions, exchanges, queues, bindings, policies, and Kubernetes `Secret` objects.
 2. The application has a documented way to switch broker endpoints, credentials, and TLS trust material.
 3. You know whether the event is a planned failover, an unplanned failover, or a failback after recovery.
-4. You know how messages are replicated or replayed between sites, for example by Federation, Shovel, application dual publishing, or business-level replay.
+4. You know how messages are replicated or replayed between sites, for example by Federation, Shovel, application dual publishing, or application-level replay.
 
 ## Planned Failover
 
