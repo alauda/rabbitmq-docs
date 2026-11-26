@@ -7,7 +7,7 @@ i18n:
 
 # RabbitMQ Disaster Recovery with Federated Exchanges
 
-This article describes a disaster recovery (DR) pattern for RabbitMQ that uses federated exchanges. In this pattern, a primary RabbitMQ instance or cluster publishes business messages to an upstream exchange, and a standby DR RabbitMQ instance or cluster uses a downstream exchange that federates from the upstream exchange.
+This article describes a disaster recovery (DR) pattern for RabbitMQ that uses federated exchanges. In this pattern, a primary RabbitMQ instance or cluster publishes application messages to an upstream exchange, and a standby DR RabbitMQ instance or cluster uses a downstream exchange that federates from the upstream exchange.
 
 Federated exchanges provide cross-cluster, asynchronous message replication for selected message flows. They are suitable for warm-standby designs, regional distribution, and selective replication. They are not a synchronous high-availability mechanism and they do not replace application failover, regular backups, RabbitMQ definitions management, or durable queue design.
 
@@ -518,7 +518,7 @@ Resolve connectivity or credential issues first, then wait for the federation li
 ### Duplicate messages appear after topology changes or reconnects
 
 Symptom:
-Consumers on the DR side receive duplicate business events.
+Consumers on the DR side receive duplicate application events.
 
 Checks:
 
