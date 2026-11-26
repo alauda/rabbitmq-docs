@@ -13,7 +13,7 @@ RabbitMQ 3.12.x cannot be directly upgraded to 4.2.x through an in-place upgrade
 
 ## Option 1: Drain & Migrate (Acceptable Downtime)
 
-This approach involves a brief service interruption. If your business can tolerate downtime, this is the most straightforward approach:
+This approach involves a brief service interruption. If your applications can tolerate downtime, this is the most straightforward approach:
 
 1. **Drain Messages:** Stop all producers and wait for consumers to process all remaining messages. Ensure all queues are empty.
 2. **Export Definitions:** Export the definitions (exchanges, queues, bindings, users, vhosts) from the old 3.12.x instance.
